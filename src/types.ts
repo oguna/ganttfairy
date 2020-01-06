@@ -1,8 +1,8 @@
 export interface Task {
   group: string;
   title: string;
-  start: string;
-  end: string;
+  start: Date;
+  end: Date;
 }
 
 export interface TaskGroup {

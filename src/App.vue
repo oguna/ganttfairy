@@ -32,7 +32,7 @@
         - Gantt Fairy</v-toolbar-title>
       <v-spacer></v-spacer>
       <v-btn
-        href="https://github.com"
+        href="https://oguna.github.io/ganttfairy/"
         target="_blank"
         text
         icon
@@ -44,6 +44,21 @@
     <v-content>
       <router-view></router-view>
     </v-content>
+  <v-footer
+    app
+      color="primary"
+      dark
+      dense
+      class="py-0"
+  >
+    <div class="px-2">{{numOfTasks}} Tasks</div>
+    <div class="px-2" v-ripple style="user-select: none">
+      <v-icon>mdi-magnify</v-icon>
+      100%
+    </div>
+    <v-spacer></v-spacer>
+    <div>Gantt Fairy by oguna</div>
+  </v-footer>
   </v-app>
 </template>
 
@@ -58,6 +73,9 @@ export default class App extends Vue{
   }
   public set title(value: string) {
     this.$store.commit('setTitle', value);
+  }
+  public get numOfTasks():number {
+    return this.$store.state.tasks.length;
   }
 }
 </script>

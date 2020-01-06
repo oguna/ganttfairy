@@ -7,18 +7,18 @@
           ref="startDateMenu"
           v-model="startDateMenu"
           :close-on-content-click="false"
-          :return-value.sync="startDate"
+          :return-value.sync="startDateISOString"
           transition="scale-transition"
           offset-y
           min-width="290px"
         >
           <template v-slot:activator="{ on }">
-            <v-btn text v-on="on">{{startDate}}</v-btn>
+            <v-btn text v-on="on">{{startDateISOString}}</v-btn>
           </template>
-          <v-date-picker v-model="startDate" no-title scrollable>
+          <v-date-picker v-model="startDateISOString" no-title scrollable>
             <v-spacer></v-spacer>
             <v-btn text color="primary" @click="startDateMenu = false">Cancel</v-btn>
-            <v-btn text color="primary" @click="$refs.startDateMenu.save(startDate)">OK</v-btn>
+            <v-btn text color="primary" @click="$refs.startDateMenu.save(startDateISOString)">OK</v-btn>
           </v-date-picker>
         </v-menu>
         <span class="my-auto">～</span>
@@ -26,18 +26,18 @@
           ref="endDateMenu"
           v-model="endDateMenu"
           :close-on-content-click="false"
-          :return-value.sync="endDate"
+          :return-value.sync="endDateISOString"
           transition="scale-transition"
           offset-y
           min-width="290px"
         >
           <template v-slot:activator="{ on }">
-            <v-btn text v-on="on">{{endDate}}</v-btn>
+            <v-btn text v-on="on">{{endDateISOString}}</v-btn>
           </template>
-          <v-date-picker v-model="endDate" no-title scrollable>
+          <v-date-picker v-model="endDateISOString" no-title scrollable>
             <v-spacer></v-spacer>
             <v-btn text color="primary" @click="endDateMenu = false">Cancel</v-btn>
-            <v-btn text color="primary" @click="$refs.endDateMenu.save(endDate)">OK</v-btn>
+            <v-btn text color="primary" @click="$refs.endDateMenu.save(endDateISOString)">OK</v-btn>
           </v-date-picker>
         </v-menu>
         <v-btn text @click="adjustTimespan">
@@ -52,17 +52,8 @@
           </template>
           <v-list>
             <v-list-item-group>
-              <v-list-item @click="hideDayOfWeek = !hideDayOfWeek">
-                <v-list-item-action>
-                  <v-checkbox v-model="hideDayOfWeek" @click.prevent></v-checkbox>
-                </v-list-item-action>
-                <v-list-item-title>Hide Day Of Week</v-list-item-title>
-              </v-list-item>
-              <v-list-item @click="hideWeekend = !hideWeekend">
-                <v-list-item-action>
-                  <v-checkbox v-model="hideWeekend" @click.prevent></v-checkbox>
-                </v-list-item-action>
-                <v-list-item-title>Hide Weekend</v-list-item-title>
+              <v-list-item>
+                <v-list-item-title>Not Implemented</v-list-item-title>
               </v-list-item>
             </v-list-item-group>
           </v-list>
@@ -95,23 +86,9 @@
             </v-list-item-group>
           </v-list>
         </v-menu>
-        <v-menu offset-y>
-          <template v-slot:activator="{ on }">
-            <v-btn text v-on="on" class="text-none">
-              <v-icon>mdi-select-group</v-icon>Group
+            <v-btn text @click="openTaskDialog(null, null)" class="text-none">
+              <v-icon>mdi-plus</v-icon>
             </v-btn>
-          </template>
-          <v-list>
-            <v-list-item-group>
-              <v-list-item @click="grouping = !grouping">
-                <v-list-item-action>
-                  <v-checkbox v-model="grouping" @click.prevent></v-checkbox>
-                </v-list-item-action>
-                <v-list-item-title>Grouping</v-list-item-title>
-              </v-list-item>
-            </v-list-item-group>
-          </v-list>
-        </v-menu>
       </v-toolbar-items>
       <v-spacer></v-spacer>
       <v-toolbar-items>
@@ -134,99 +111,40 @@
       </v-toolbar-items>
     </v-toolbar>
     <div class="gantt">
-      <table class="sticky_table">
-        <thead>
-          <tr>
-            <th :rowspan="hideDayOfWeek?2:3" class="th-first-child">#</th>
-            <th :rowspan="hideDayOfWeek?2:3" v-if="!grouping">Group</th>
-            <th :rowspan="hideDayOfWeek?2:3">Title</th>
-            <th :rowspan="hideDayOfWeek?2:3">Start</th>
-            <th :rowspan="hideDayOfWeek?2:3">End</th>
-            <th
-              v-for="({start, length},index) in sameMonthLength"
-              :key="index"
-              :colspan="length"
-            >{{format(dates[start], "y-M")}}</th>
-          </tr>
-          <tr>
-            <th v-for="date in dates" :key="date.valueOf()">{{format(date, "d")}}</th>
-          </tr>
-          <tr v-if="!hideDayOfWeek">
-            <th
-              v-for="date in dates"
-              :class="{holiday: isHoriday(date)}"
-              :key="date.valueOf()"
-            >{{getWeekOfDays(date)}}</th>
-          </tr>
-        </thead>
-        <tbody v-if="!grouping">
-          <tr v-for="(item, index) in items" :key="item.title">
-            <th nowrap class="th-first-child">
-              {{index+1}}
-              <v-btn text icon x-small @click.stop="openTaskDialog(item, index+1)">
-                <v-icon>mdi-arrow-expand</v-icon>
-              </v-btn>
-              <v-btn text icon x-small @click.stop="deleteTask(index+1)">
-                <v-icon>mdi-delete</v-icon>
-              </v-btn>
-            </th>
-            <td nowrap>{{item.group}}</td>
-            <td nowrap>{{item.title}}</td>
-            <td nowrap>{{item.start}}</td>
-            <td nowrap>{{item.end}}</td>
-            <td v-for="date in dates" :key="date.valueOf()" :class="{today: isToday(date)}">
-              <div
-                :class="{active_task: isActiveTask(item.start, item.end, date)}"
-                class="expand_to_parent"
-              ></div>
-            </td>
-          </tr>
-          <tr>
-            <td>
-              <v-btn text tile small block @click.stop="openTaskDialog(null, null)">
-                <v-icon>mdi-plus</v-icon>
-              </v-btn>
-            </td>
-          </tr>
-        </tbody>
-        <tbody v-else>
-          <template v-for="group in groups">
-            <tr :key="group.name">
-              <th>
-                <v-btn text tile small block @click="foldingGroups.push(group.name)" v-if="!foldingGroups.includes(group.name)">
-                  <v-icon>mdi-unfold-more-horizontal</v-icon>
-                </v-btn>
-                <v-btn text tile small block @click="foldingGroups = foldingGroups.filter(v=>v!==group.name)" v-if="foldingGroups.includes(group.name)">
-                  <v-icon>mdi-unfold-less-horizontal</v-icon>
-                </v-btn>
-              </th>
-              <td colspan="3">{{group.name}}</td>
-            </tr>
-            <template v-if="!foldingGroups.includes(group.name)">
-            <tr v-for="itemIndex in group.itemIndecies" :key="itemIndex">
-              <th nowrap class="th-first-child">
-                {{itemIndex}}
-                <v-btn text icon x-small @click.stop="openTaskDialog(items[itemIndex-1], itemIndex)">
-                  <v-icon>mdi-arrow-expand</v-icon>
-                </v-btn>
-                <v-btn text icon x-small @click.stop="deleteTask(items[itemIndex-1])">
-                  <v-icon>mdi-delete</v-icon>
-                </v-btn>
-              </th>
-              <td nowrap class="pl-3">{{items[itemIndex-1].title}}</td>
-              <td nowrap>{{items[itemIndex-1].start}}</td>
-              <td nowrap>{{items[itemIndex-1].end}}</td>
-              <td v-for="date in dates" :key="date.valueOf()" :class="{today: isToday(date)}">
-                <div
-                  :class="{active_task: isActiveTask(items[itemIndex-1].start, items[itemIndex-1].end, date)}"
-                  class="expand_to_parent"
-                ></div>
-              </td>
-            </tr>
-            </template>
-          </template>
-        </tbody>
-      </table>
+      <div :style="styles" style="white-space: nowrap;">
+    <div class="left">
+      <div class="left_header"></div>
+      <draggable-list v-on:open-dialog="openTaskDialog" :tasks="tasks"></draggable-list>
+    </div>
+    <div class="grip disable-select"
+    @dragstart="dragstart"
+    @dragend="dragend"
+    draggable="true"
+    @dblclick="gripOffset = null"></div>
+    <div class="right">
+      <div class="right_header">
+          <div class="month_header">
+              <div class="date" v-for="(month,index) in sameMonthLength" :key="index"
+              :style="'width:'+(month.length * dateWidth)+'px'">
+                  {{format(dates[month.start], "yyyy-MM")}}
+                </div>
+          </div>
+          <div class="date_header">
+            <div class="date" v-for="date in dates" :key="date.getTime()">{{date.getDate()}}</div>
+          </div>
+          <div class="week_header">
+            <div class="date" v-for="date in dates" :key="date.getTime()">{{"日月火水木金土"[date.getDay()]}}</div>
+          </div>
+      </div>
+      <gantt-chart
+      :start="startDate"
+      :end="endDate"
+      :tasks="tasks"
+      :dates="dates"
+      :dateWidth="dateWidth"
+      ></gantt-chart>
+    </div>
+  </div>
     </div>
     <v-dialog v-model="taskDialog" max-width="290">
       <task-card
@@ -240,7 +158,7 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue } from "vue-property-decorator";
+import { Component, Vue, Prop } from "vue-property-decorator";
 import { Task, TaskGroup } from "@/types";
 import {
   format,
@@ -250,26 +168,43 @@ import {
   isToday,
   subDays,
   parseISO,
-  isSameMonth
+  isSameMonth,
+  parse
 } from "date-fns";
 import ja from "date-fns/locale/ja";
 import TaskCard from "@/components/TaskCard.vue";
 import ExportCard from "@/components/ExportCard.vue";
 import ImportCard from "@/components/ImportCard.vue";
+import GanttChart from "@/components/GanttChart.vue";
+import DraggableList from "@/components/DraggableList.vue";
 @Component({
   components: {
     TaskCard,
     ExportCard,
-    ImportCard
+    ImportCard,
+    GanttChart,
+    DraggableList
   }
 })
 export default class Home extends Vue {
+  @Prop()
+  public taskId?: string;
+  public get startDateISOString():string {
+    return format(this.startDate, 'yyyy-MM-dd');
+  }
+  public set startDateISOString(value: string) {
+    this.startDate = parse(value, 'yyyy-MM-dd', new Date());
+  }
+  public get endDateISOString():string {
+    return format(this.endDate, 'yyyy-MM-dd');
+  }
+  public set endDateISOString(value: string) {
+    this.endDate = parse(value, 'yyyy-MM-dd', new Date());
+  }
   public startDateMenu = false;
   public endDateMenu = false;
-  public startDate = "2019-11-01";
-  public endDate = "2020-01-10";
-  public hideDayOfWeek = false;
-  public hideWeekend = false;
+  public startDate = new Date(2019, 10, 1);
+  public endDate = new Date(2020,1,10);
   public format = format;
   public isToday = isToday;
   public taskDialog = false;
@@ -277,23 +212,16 @@ export default class Home extends Vue {
   public edittingTaskIndex: number | null = null;
   public exportDialog = false;
   public importDialog = false;
-  public grouping = true;
+  public  = true;
   public get items(): Task[] {
     return this.$store.state.tasks;
   }
   public get dates(): Date[] {
-    const startDay = new Date(2019, 10, 1);
     const dates = [];
     let date = new Date(this.startDate);
     const end = new Date(this.endDate);
     while (date <= end) {
-      if (this.hideWeekend) {
-        if (!this.isHoriday(date)) {
-          dates.push(date);
-        }
-      } else {
-        dates.push(date);
-      }
+      dates.push(date);
       date = addDays(date, 1);
     }
     return dates;
@@ -319,17 +247,16 @@ export default class Home extends Vue {
   public isHoriday(date: Date) {
     return isSunday(date) || isSaturday(date);
   }
-  public isActiveTask(start: string, end: string, day: Date) {
-    const today = format(day, "yyyy-MM-dd");
-    return start <= today && today <= end;
+  public isActiveTask(start: Date, end: Date, day: Date) {
+    return start <= day && day <= end;
   }
   public openTaskDialog(task: Task, index: number | null) {
     if (task === null) {
       this.edittingTask = {
         group: "",
         title: "",
-        start: new Date().toISOString().substr(0, 10),
-        end: new Date().toISOString().substr(0, 10)
+        start: new Date(),
+        end: new Date()
       };
     } else {
       this.edittingTask = Object.assign({}, task);
@@ -361,12 +288,8 @@ export default class Home extends Vue {
     const lastDate = this.items
       .map(v => v.end)
       .reduce((a, b) => (a > b ? a : b));
-    this.startDate = subDays(parseISO(firstDate), 0)
-      .toISOString()
-      .substr(0, 10);
-    this.endDate = addDays(parseISO(lastDate), 2)
-      .toISOString()
-      .substr(0, 10);
+    this.startDate = subDays(firstDate, 1);
+    this.endDate = addDays(lastDate, 1);
   }
   public get groups(): TaskGroup[] {
     const groups:TaskGroup[] = [];
@@ -385,82 +308,115 @@ export default class Home extends Vue {
     return groups;
   }
   public foldingGroups: string[] = [];
+
+  public dateWidth = 24;
+  public get tasks(): Task[] {
+    return this.$store.state.tasks;
+  }
+  public gripOffset: number|null = 200;
+  public get styles() {
+    return {
+      "--gripOffset": this.gripOffset === null ? 'auto' : `${this.gripOffset}px`,
+      "--numOfTasks": this.tasks.length,
+      "--dateWidth": this.dateWidth+'px',
+    };
+  }
+  public dragstart(e: DragEvent) {
+      e.dataTransfer!.dropEffect = "none";
+  }
+  public dragend(e: DragEvent) {
+      this.gripOffset = e.clientX;
+  }
+ 
 }
 </script>
 
 <style scoped>
-td {
-  border: solid 1px gray;
-  padding: 0;
-  margin: 0;
-}
-th {
-  border: solid 1px gray;
-  padding: 0;
-  margin: 0;
-}
-table {
-  border-collapse: collapse;
-  border-spacing: 0;
-}
-.sticky_table thead th {
-  position: -webkit-sticky;
-  position: sticky;
-  z-index: 0;
-  white-space: nowrap;
-}
-.sticky_table .th-first-child {
-  position: -webkit-sticky;
-  position: sticky;
-  left: 0;
-  z-index: 0;
-  background-color: white;
-}
-.sticky_table thead .th-first-child {
-  z-index: 1;
-}
-.sticky_table tbody tr:nth-child(even) {
-  background-color: lightcyan;
-}
-.sticky_table tbody th:nth-child(even) {
-  background-color: lightcyan;
-}
-.sticky_table thead th {
-  background-color: white;
-}
-.sticky_table thead th {
-  background-color: ghostwhite;
-}
-.sticky_table thead tr:nth-child(1) th {
-  top: 0;
-}
-.sticky_table thead tr:nth-child(2) th {
-  top: 1.5rem;
-}
-.sticky_table thead tr:nth-child(3) th {
-  top: 3rem;
-}
-.sticky_table .holiday {
-  background-color: pink;
-}
+
 .container {
   margin: 0;
   padding: 0;
 }
 .gantt {
   width: 100%;
-  height: calc(100vh - 96px);
+  height: calc(100vh - 96px - 24px);
   overflow-x: scroll;
   overflow-y: scroll;
-}
-.active_task {
-  background-color: red;
-}
-.expand_to_parent {
-  height: 1em;
-  width: 1.2em;
 }
 .today {
   background-color: aqua;
 }
+div.left {
+  display: inline-block;
+  background-color: white;
+  width: var(--gripOffset);
+  white-space: nowrap;
+  vertical-align: top;
+  position: -webkit-sticky;
+  position: sticky;
+  left: 0;
+  z-index: 1;
+}
+div.left_header {
+  height: 4.5rem;
+  background-color: gainsboro;
+  position: -webkit-sticky;
+  position: sticky;
+  top: 0;
+  left: 0;
+  border-top: 1px solid gray;
+  border-bottom: 1px solid gray;
+}
+div.right {
+  display: inline-block;
+  background-color: white;
+  white-space: nowrap;
+  vertical-align: top;
+}
+div.right_header {
+  height: 4.5rem;
+  background-color: gainsboro;
+  position: -webkit-sticky;
+  position: sticky;
+  top: 0;
+}
+div.grip {
+  display: inline-block;
+  background-color: grey;
+  width: 0.5rem;
+  white-space: nowrap;
+  vertical-align: top;
+  height: calc(1.5rem * var(--numOfTasks) + 4.5rem);
+  cursor: w-resize;
+  position: -webkit-sticky;
+  position: sticky;
+  left: var(--gripOffset);
+  z-index: 1;
+}
+div.date {
+  display: inline-block;
+  width: var(--dateWidth);
+  height: 1.5rem;
+  border-bottom: 1px solid gray;
+  border-right: 1px solid gray;
+  font-size: 1rem;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+}
+div.month_header {
+    border-top: 1px solid gray;
+    height: 1.5rem;
+}
+div.date_header {
+    height: 1.5rem;
+}
+div.week_header {
+    height: 1.5rem;
+}
+.disable-select {
+        -ms-user-select: none;
+        -webkit-user-select: none;
+        user-select: none;
+      }
 </style>

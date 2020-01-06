@@ -2,6 +2,7 @@ import Vue from 'vue'
 import Vuex from 'vuex'
 import {Task, RootState} from '@/types';
 import { parseVariousDateString } from '@/utils';
+import {addDays, format} from 'date-fns';
 
 Vue.use(Vuex)
 
@@ -9,34 +10,34 @@ const tasks: Task[] = [
   {
     group: '見積もり',
     title: '見積もり',
-    start: '2019-11-11',
-    end: '2019-11-20',
+    start: new Date('2019-11-11T00:00:00'),
+    end: new Date('2019-11-20T00:00:00'),
   },
   {
     group: '見積もり',
     title: '見積もりレビュー',
-    start: '2019-11-21',
-    end: '2019-11-22',
+    start: new Date('2019-11-21T00:00:00'),
+    end: new Date('2019-11-22T00:00:00'),
   },
   {
     group: '設計',
     title: '設計',
-    start: '2019-11-30',
-    end: '2019-12-10',
+    start: new Date('2019-11-30T00:00:00'),
+    end: new Date('2019-12-10T00:00:00'),
   },
   {
     group: '設計',
     title: '設計レビュー',
-    start: '2019-12-11',
-    end: '2019-12-12',
+    start: new Date('2019-12-11T00:00:00'),
+    end: new Date('2019-12-12T00:00:00'),
   },
 ];
 for (let i = 1; i < 50; i++) {
   tasks.push({
     group: '実装',
     title: 'モジュール'+i,
-    start: '2019-12-20',
-    end: '2020-02-01',
+    start: addDays(new Date('2019-12-20T00:00:00'), i * 2),
+    end: addDays(new Date('2019-12-24T00:00:00'), i*3),
   });
 }
 
@@ -69,7 +70,9 @@ export default new Vuex.Store({
       const tasks = state.tasks;
       for (let i = 0; i < tasks.length; i++) {
         const task = tasks[i];
-        rows.push([(i+1).toString(), task.title, task.start, task.end].join(payload.seprator))
+        const start = format(task.start, 'yyyy-MM-dd');
+        const end = format(task.end, 'yyyy-MM-dd');
+        rows.push([(i+1).toString(), task.title, start, end].join(payload.seprator))
       }
       return rows.join('\n');
     },
@@ -99,8 +102,8 @@ export default new Vuex.Store({
         const columns = row.split(tabSeparator ?'\t' : ',').map(v => v.trim());
         const group = columns[0];
         const title = columns[1];
-        const start = parseVariousDateString(columns[2])!.toISOString().substring(0, 10);
-        const end = parseVariousDateString(columns[3])!.toISOString().substring(0, 10);
+        const start = parseVariousDateString(columns[2])!;
+        const end = parseVariousDateString(columns[3])!;
         const task = {
           group,
           title,
