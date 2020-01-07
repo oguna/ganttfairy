@@ -44,7 +44,8 @@ for (let i = 1; i < 50; i++) {
 export default new Vuex.Store({
   state: {
     tasks,
-    title: 'Unnamed'
+    title: 'Unnamed',
+    magnify: 100,
   } as RootState,
   mutations: {
     setTitle(state, title) {
@@ -62,6 +63,9 @@ export default new Vuex.Store({
     deleteTask(state, index: number) {
       state.tasks.splice(index-1, 1);
     },
+    setMagnify(state, zoom: number) {
+      state.magnify = zoom;
+    }
   },
   actions: {
     async exportCSV({state}, payload: {seprator: string}) {
@@ -113,7 +117,7 @@ export default new Vuex.Store({
         tasks.push(task);
       }
       commit('setTasks', tasks);
-    }
+    },
   },
   modules: {
   }

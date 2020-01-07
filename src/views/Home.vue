@@ -309,7 +309,9 @@ export default class Home extends Vue {
   }
   public foldingGroups: string[] = [];
 
-  public dateWidth = 24;
+  public get dateWidth(): number {
+    return Math.round(this.$store.state.magnify * 24 / 100);
+  }
   public get tasks(): Task[] {
     return this.$store.state.tasks;
   }
@@ -339,7 +341,7 @@ export default class Home extends Vue {
 }
 .gantt {
   width: 100%;
-  height: calc(100vh - 96px - 24px);
+  height: calc(100vh - 96px - 28px);
   overflow-x: scroll;
   overflow-y: scroll;
 }

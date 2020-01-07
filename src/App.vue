@@ -31,14 +31,6 @@
       </v-menu>
         - Gantt Fairy</v-toolbar-title>
       <v-spacer></v-spacer>
-      <v-btn
-        href="https://oguna.github.io/ganttfairy/"
-        target="_blank"
-        text
-        icon
-      >
-        <v-icon>mdi-github-circle</v-icon>
-      </v-btn>
     </v-app-bar>
 
     <v-content>
@@ -51,13 +43,33 @@
       dense
       class="py-0"
   >
-    <div class="px-2">{{numOfTasks}} Tasks</div>
-    <div class="px-2" v-ripple style="user-select: none">
-      <v-icon>mdi-magnify</v-icon>
-      100%
-    </div>
+    <div class="px-2 body-2">{{numOfTasks}} Tasks</div>
+    <v-menu offset-y top>
+      <template v-slot:activator="{on}">
+        <v-btn small text tile class="px-2" dark v-on="on">
+          <v-icon small>mdi-magnify</v-icon>
+          {{magnify}}%
+        </v-btn>
+      </template>
+      <v-list dense>
+        <v-list-item-group>
+        <v-list-item @click="setMagnify(100)">
+          <v-list-item-title>100%</v-list-item-title>
+        </v-list-item>
+        <v-list-item @click="setMagnify(50)">
+          <v-list-item-title>50%</v-list-item-title>
+        </v-list-item>
+        </v-list-item-group>
+      </v-list>
+    </v-menu>
     <v-spacer></v-spacer>
-    <div>Gantt Fairy by oguna</div>
+        <v-btn small text tile class="px-2 text-none" dark
+        href="https://oguna.github.io/ganttfairy/"
+        target="_blank"
+        >
+          <v-icon class="mr-1" small>mdi-github-circle</v-icon>
+          Gantt Fairy by oguna
+        </v-btn>
   </v-footer>
   </v-app>
 </template>
@@ -76,6 +88,12 @@ export default class App extends Vue{
   }
   public get numOfTasks():number {
     return this.$store.state.tasks.length;
+  }
+  public get magnify(): number {
+    return this.$store.state.magnify;
+  }
+  public setMagnify(value: number) {
+    this.$store.commit('setMagnify', value);
   }
 }
 </script>

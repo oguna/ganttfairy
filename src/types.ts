@@ -13,4 +13,5 @@ export interface TaskGroup {
 export interface RootState {
     tasks: Task[];
     title: string;
+    magnify: number;
 }
