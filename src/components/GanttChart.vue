@@ -166,6 +166,7 @@ export default class GanttChart extends Vue {
         this.selectedDelta = Math.round(deltaX / this.dateWidth);
     }
     public taskMouseup(event: MouseEvent) {
+        if (this.selectedDelta !== null) {
         if (this.selectedType === 'start') {
             this.tasks[this.selectedRect!].start = addDays(this.tasks[this.selectedRect!].start, this.selectedDelta!)
         }
@@ -175,6 +176,7 @@ export default class GanttChart extends Vue {
         if (this.selectedType === 'task') {
             this.tasks[this.selectedRect!].start = addDays(this.tasks[this.selectedRect!].start, this.selectedDelta!)
             this.tasks[this.selectedRect!].end = addDays(this.tasks[this.selectedRect!].end, this.selectedDelta!)
+        }
         }
         this.selectedRect = null;
         this.selectedPos = null;
