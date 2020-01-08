@@ -8,25 +8,29 @@ Vue.use(Vuex)
 
 const tasks: Task[] = [
   {
-    group: '見積もり',
+    id: 1,
+    parent: null,
     title: '見積もり',
     start: new Date('2019-11-11T00:00:00'),
     end: new Date('2019-11-20T00:00:00'),
   },
   {
-    group: '見積もり',
+    id: 2,
+    parent: null,
     title: '見積もりレビュー',
     start: new Date('2019-11-21T00:00:00'),
     end: new Date('2019-11-22T00:00:00'),
   },
   {
-    group: '設計',
+    id: 3,
+    parent: null,
     title: '設計',
     start: new Date('2019-11-30T00:00:00'),
     end: new Date('2019-12-10T00:00:00'),
   },
   {
-    group: '設計',
+    id: 4,
+    parent: null,
     title: '設計レビュー',
     start: new Date('2019-12-11T00:00:00'),
     end: new Date('2019-12-12T00:00:00'),
@@ -34,7 +38,8 @@ const tasks: Task[] = [
 ];
 for (let i = 1; i < 50; i++) {
   tasks.push({
-    group: '実装',
+    id: 4+i,
+    parent: null,
     title: 'モジュール'+i,
     start: addDays(new Date('2019-12-20T00:00:00'), i * 2),
     end: addDays(new Date('2019-12-24T00:00:00'), i*3),
@@ -44,6 +49,7 @@ for (let i = 1; i < 50; i++) {
 export default new Vuex.Store({
   state: {
     tasks,
+    nextTaskId: 54,
     title: 'Unnamed',
     magnify: 100,
   } as RootState,
@@ -51,17 +57,26 @@ export default new Vuex.Store({
     setTitle(state, title) {
       state.title = title;
     },
-    updateTask(state, payload: {task: Task, index: number}) {
-      state.tasks.splice(payload.index-1, 1, payload.task);
+    updateTask(state, task: Task) {
+      const index = state.tasks.findIndex(v=>v.id===task.id);
+      if (index === -1) {
+        throw new RangeError();
+      }
+      state.tasks.splice(index, 1, task);
     },
     addTask(state, task: Task) {
+      task.id = state.nextTaskId++;
       state.tasks.push(Object.assign({}, task));
     },
     setTasks(state, tasks: Task[]) {
       state.tasks = tasks;
     },
-    deleteTask(state, index: number) {
-      state.tasks.splice(index-1, 1);
+    deleteTask(state, id: number) {
+      const index = state.tasks.findIndex(v=>v.id===id);
+      if (index === -1) {
+        throw new RangeError();
+      }
+      state.tasks.splice(index, 1);
     },
     setMagnify(state, zoom: number) {
       state.magnify = zoom;
@@ -76,7 +91,7 @@ export default new Vuex.Store({
         const task = tasks[i];
         const start = format(task.start, 'yyyy-MM-dd');
         const end = format(task.end, 'yyyy-MM-dd');
-        rows.push([(i+1).toString(), task.title, start, end].join(payload.seprator))
+        rows.push([task.id, task.title, start, end].join(payload.seprator))
       }
       return rows.join('\n');
     },
@@ -104,12 +119,12 @@ export default new Vuex.Store({
           continue;
         }
         const columns = row.split(tabSeparator ?'\t' : ',').map(v => v.trim());
-        const group = columns[0];
+        const id = Number.parseInt(columns[0]);
         const title = columns[1];
         const start = parseVariousDateString(columns[2])!;
         const end = parseVariousDateString(columns[3])!;
         const task = {
-          group,
+          id,
           title,
           start,
           end

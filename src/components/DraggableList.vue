@@ -11,7 +11,7 @@
       :class="{dragging: draggingIndex===index}"
       @click="openDialog(index+1, task)"
     >
-    #{{index+1}}: {{task.title}}</div>
+    #{{task.id}}: {{task.title}}</div>
   </div>
 </template>
 <script lang="ts">
@@ -36,7 +36,7 @@ export default class DraggableList extends Vue {
       if (this.draggingIndex === null) {
           return;
       }
-      event.preventDefault();
+    event.preventDefault();
     this.tasks.splice(this.draggingIndex!, 1);
     this.tasks.splice(taskIndex, 0, this.draggingTask!);
     this.draggingIndex = taskIndex;
@@ -44,7 +44,7 @@ export default class DraggableList extends Vue {
   public draggingTask: Task | null = null;
   public draggingIndex: number | null = null;
   public openDialog(index: number, task: Task) {
-    this.$emit('open-dialog', task, index);
+    this.$emit('open-dialog', task);
   }
 }
 </script>

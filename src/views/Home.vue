@@ -86,7 +86,7 @@
             </v-list-item-group>
           </v-list>
         </v-menu>
-            <v-btn text @click="openTaskDialog(null, null)" class="text-none">
+            <v-btn text @click="openTaskDialog(null)" class="text-none">
               <v-icon>mdi-plus</v-icon>
             </v-btn>
       </v-toolbar-items>
@@ -149,7 +149,6 @@
     <v-dialog v-model="taskDialog" max-width="290">
       <task-card
         :task="edittingTask"
-        :index="edittingTaskIndex"
         v-on:close="closeTaskDialog"
         v-on:submit="saveTaskDialog"
       ></task-card>
@@ -159,7 +158,7 @@
 
 <script lang="ts">
 import { Component, Vue, Prop } from "vue-property-decorator";
-import { Task, TaskGroup } from "@/types";
+import { Task } from "@/types";
 import {
   format,
   addDays,
@@ -209,7 +208,6 @@ export default class Home extends Vue {
   public isToday = isToday;
   public taskDialog = false;
   public edittingTask: Task | null = null;
-  public edittingTaskIndex: number | null = null;
   public exportDialog = false;
   public importDialog = false;
   public  = true;
@@ -250,10 +248,11 @@ export default class Home extends Vue {
   public isActiveTask(start: Date, end: Date, day: Date) {
     return start <= day && day <= end;
   }
-  public openTaskDialog(task: Task, index: number | null) {
+  public openTaskDialog(task: Task|null) {
     if (task === null) {
       this.edittingTask = {
-        group: "",
+        id: 0,
+        parent: null,
         title: "",
         start: new Date(),
         end: new Date()
@@ -261,20 +260,16 @@ export default class Home extends Vue {
     } else {
       this.edittingTask = Object.assign({}, task);
     }
-    this.edittingTaskIndex = index;
     this.taskDialog = true;
   }
   public closeTaskDialog() {
     this.taskDialog = false;
   }
   public saveTaskDialog() {
-    if (this.edittingTaskIndex === null) {
+    if (this.edittingTask!.id === null) {
       this.$store.commit("addTask", this.edittingTask);
     } else {
-      this.$store.commit("updateTask", {
-        index: this.edittingTaskIndex,
-        task: this.edittingTask
-      });
+      this.$store.commit("updateTask", this.edittingTask);
     }
     this.closeTaskDialog();
   }
@@ -291,23 +286,6 @@ export default class Home extends Vue {
     this.startDate = subDays(firstDate, 1);
     this.endDate = addDays(lastDate, 1);
   }
-  public get groups(): TaskGroup[] {
-    const groups:TaskGroup[] = [];
-    for (let index = 0; index < this.items.length; index++) {
-      const task = this.items[index];
-      const group = groups.find((v:TaskGroup) => v.name === task.group);
-      if (group === undefined) {
-        groups.push({
-          name: task.group,
-          itemIndecies: [index+1],
-        });
-      } else {
-        group.itemIndecies.push(index+1);
-      }
-    }
-    return groups;
-  }
-  public foldingGroups: string[] = [];
 
   public get dateWidth(): number {
     return Math.round(this.$store.state.magnify * 24 / 100);

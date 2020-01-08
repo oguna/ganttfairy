@@ -1,6 +1,6 @@
 <template>
   <v-card>
-    <v-card-title>#{{index||"new"}}</v-card-title>
+    <v-card-title>#{{task.id||"new"}}</v-card-title>
     <v-card-text>
       <v-text-field v-model="task.title" label="Title"></v-text-field>
       <v-text-field v-model="task.group" label="Group"></v-text-field>
@@ -44,7 +44,7 @@
       </v-menu>
     </v-card-text>
     <v-card-actions>
-      <v-btn text @click="this.delete" color="red" outlined>Delete</v-btn>
+      <v-btn v-if="task.id===null" text @click="this.delete" color="red" outlined>Delete</v-btn>
       <v-spacer></v-spacer>
       <v-btn text @click="close">Cancel</v-btn>
       <v-btn text color="primary" @click="submit">Submit</v-btn>
@@ -71,8 +71,6 @@ export default class TaskCard extends Vue {
     this.task!.end = parse(value, 'yyyy-MM-dd', new Date());
   }
   @Prop()
-  public index?: number;
-  @Prop()
   public task?: Task;
   public startMenu = false;
   public endMenu = false;
@@ -83,7 +81,7 @@ export default class TaskCard extends Vue {
     this.$emit("submit");
   }
   public delete() {
-    this.$store.commit('deleteTask', this.index);
+    this.$store.commit('deleteTask', this.task!.id);
     this.$emit('close');
   }
 }

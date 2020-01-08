@@ -1,17 +1,14 @@
 export interface Task {
-  group: string;
+  id: number;
+  parent: number|null;
   title: string;
   start: Date;
   end: Date;
 }
 
-export interface TaskGroup {
-  name: string;
-  itemIndecies: number[];
-}
-
 export interface RootState {
     tasks: Task[];
+    nextTaskId: number;
     title: string;
     magnify: number;
 }
