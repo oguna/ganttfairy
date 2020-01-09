@@ -74,18 +74,19 @@ export default new Vuex.Store({
       return children.concat(others);
     },
     getFastDateLastDateOfTasks: (state, getters) => (id: number) => {
-      const siblingTask = getters.getSiblingTasksById(id).map((id: number) => getters.getTaskById(id));
-      if (siblingTask.length === 0) {
+      const task = getters.getTaskById(id);
+      const siblingTasks: Task[] = getters.getSiblingTasksById(id);
+      if (siblingTasks.length === 0) {
         return null;
       }
-      let fast = siblingTask[0].start;
-      let last = siblingTask[0].end;
-      for (let i = 1; i < siblingTask.length; i++) {
-        if (siblingTask[i].start < fast) {
-          fast = siblingTask[i].start;
+      let fast = task.start;
+      let last = task.end;
+      for (let i = 0; i < siblingTasks.length; i++) {
+        if (siblingTasks[i].start < fast) {
+          fast = siblingTasks[i].start;
         }
-        if (last < siblingTask[i].end) {
-          last = siblingTask[i].end;
+        if (last < siblingTasks[i].end) {
+          last = siblingTasks[i].end;
         }
       }
       return {fast, last};

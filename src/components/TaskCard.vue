@@ -52,7 +52,7 @@
         label="Parent">
       </v-select>
       <v-list dense>
-        <v-subheader>Children</v-subheader>
+        <v-subheader>{{childPluralization}}</v-subheader>
         <v-list-item-group>
           <v-list-item v-for="child in children" :key="child.id">
             <v-list-item-content>
@@ -123,6 +123,16 @@ export default class TaskCard extends Vue {
   public delete() {
     this.$store.commit('deleteTask', this.task!.id);
     this.$emit('close');
+  }
+  public get childPluralization() {
+    const num = this.children.length;
+    if (num === 0) {
+      return "No children"
+    } else if (num === 1) {
+      return "1 child"
+    } else {
+      return num + " children";
+    }
   }
 }
 </script>
