@@ -1,5 +1,5 @@
 import Vue from 'vue'
-import Vuex from 'vuex'
+import Vuex, { mapActions } from 'vuex'
 import {Task, RootState} from '@/types';
 import { parseVariousDateString } from '@/utils';
 import {addDays, format} from 'date-fns';
@@ -16,7 +16,7 @@ const tasks: Task[] = [
   },
   {
     id: 2,
-    parent: null,
+    parent: 1,
     title: '見積もりレビュー',
     start: new Date('2019-11-21T00:00:00'),
     end: new Date('2019-11-22T00:00:00'),
@@ -30,7 +30,7 @@ const tasks: Task[] = [
   },
   {
     id: 4,
-    parent: null,
+    parent: 3,
     title: '設計レビュー',
     start: new Date('2019-12-11T00:00:00'),
     end: new Date('2019-12-12T00:00:00'),
@@ -53,6 +53,44 @@ export default new Vuex.Store({
     title: 'Unnamed',
     magnify: 100,
   } as RootState,
+  getters: {
+    getTaskById: (state) => (id: number) => {
+      return state.tasks.find(task => task.id === id);
+    },
+    getChildrenTasksById: (state) => (id: number) => {
+      return state.tasks.filter(task => task.parent === id);
+    },
+    getAncestorTasksById: (state, getters) => (id: number) => {
+      let task = getters.getTaskById(id);
+      const result = new Array<number>();
+      while (task.parent) {
+        result.push(task.parent);
+      }
+      return result;
+    },
+    getSiblingTasksById: (state, getters) => (id: number) => {
+      const children = getters.getChildrenTasksById(id);
+      const others = children.flatMap((task: Task) => getters.getChildrenTasksById(id));
+      return children.concat(others);
+    },
+    getFastDateLastDateOfTasks: (state, getters) => (id: number) => {
+      const siblingTask = getters.getSiblingTasksById(id).map((id: number) => getters.getTaskById(id));
+      if (siblingTask.length === 0) {
+        return null;
+      }
+      let fast = siblingTask[0].start;
+      let last = siblingTask[0].end;
+      for (let i = 1; i < siblingTask.length; i++) {
+        if (siblingTask[i].start < fast) {
+          fast = siblingTask[i].start;
+        }
+        if (last < siblingTask[i].end) {
+          last = siblingTask[i].end;
+        }
+      }
+      return {fast, last};
+    },
+  },
   mutations: {
     setTitle(state, title) {
       state.title = title;
@@ -77,6 +115,10 @@ export default new Vuex.Store({
         throw new RangeError();
       }
       state.tasks.splice(index, 1);
+      const children = state.tasks.filter(task => task.parent === id);
+      for (let child of children) {
+        child.parent = null;
+      }
     },
     setMagnify(state, zoom: number) {
       state.magnify = zoom;

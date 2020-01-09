@@ -10,8 +10,9 @@
       @dragenter="dragenter(index, $event)"
       :class="{dragging: draggingIndex===index}"
       @click="openDialog(index+1, task)"
-    >
-    #{{task.id}}: {{task.title}}</div>
+    >#{{task.id}}: {{task.title}}
+    <v-chip v-if="task.parent" x-small outlined>Parent:#{{task.parent}}</v-chip>
+    </div>
   </div>
 </template>
 <script lang="ts">
@@ -26,16 +27,16 @@ export default class DraggableList extends Vue {
     this.draggingIndex = taskIndex;
   }
   public dragend(event: DragEvent) {
-      if (this.draggingIndex === null) {
-          return;
-      }
+    if (this.draggingIndex === null) {
+      return;
+    }
     this.draggingTask = null;
     this.draggingIndex = null;
   }
   public dragenter(taskIndex: number, event: DragEvent) {
-      if (this.draggingIndex === null) {
-          return;
-      }
+    if (this.draggingIndex === null) {
+      return;
+    }
     event.preventDefault();
     this.tasks.splice(this.draggingIndex!, 1);
     this.tasks.splice(taskIndex, 0, this.draggingTask!);
@@ -44,7 +45,7 @@ export default class DraggableList extends Vue {
   public draggingTask: Task | null = null;
   public draggingIndex: number | null = null;
   public openDialog(index: number, task: Task) {
-    this.$emit('open-dialog', task);
+    this.$emit("open-dialog", task);
   }
 }
 </script>
