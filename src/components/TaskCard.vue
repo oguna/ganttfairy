@@ -98,7 +98,7 @@
         item-value="value"
         label="New dependency from">
       </v-select>
-      <v-btn block @click="addNewDependency">New Dependency</v-btn>
+      <v-btn :disabled="!dependencyTask" block @click="addNewDependency">New Dependency</v-btn>
     </v-card-text>
     <v-divider></v-divider>
     <v-card-actions>
@@ -118,10 +118,10 @@ import {format, parse} from 'date-fns';
 export default class TaskCard extends Vue {
   public get dependencyTypes() {
     return [
-      {'text': 'FS: FinishToStart', value: 0},
-      {'text': 'SS: StartToStart', value: 1},
-      {'text': 'FF: FinishToFinish', value: 2},
-      {'text': 'SF: StartToFinish', value: 3},
+      {text: 'FS: FinishToStart', value: 0},
+      {text: 'SS: StartToStart', value: 1},
+      {text: 'FF: FinishToFinish', value: 2},
+      {text: 'SF: StartToFinish', value: 3},
     ]
   }
   public get tasks() {
@@ -142,11 +142,13 @@ export default class TaskCard extends Vue {
     this.$store.commit('addDependency', {
       'from': this.dependencyTask,
       'to': this.task!.id,
-      'type': this.dependencyTypes,
+      'type': this.dependencyType,
     });
+    this.dependencyTask = null;
+    this.dependencyType = 0;
   }
   public dependencyType: number = 0;;
-  public dependencyTask: number = 0;;
+  public dependencyTask: number|null = null;;
   public get dependenciesToThis() {
     const types = ['FS', 'SS', 'FF', 'SF'];
     return this.$store.state.dependencies
