@@ -88,6 +88,19 @@
         />
       </template>
     </g>
+    <g stroke="black" stroke-width="1">
+      <marker id="arrow" viewBox="-5 -5 10 10" orient="auto" markerWidth="10" markerHeight="10">
+        <polygon points="-5,-5 5,0 -5,5" fill="black" stroke="none" />
+      </marker>
+      <line v-for="(dependency,index) in dependencyGraphs"
+      :key="'dependency'+index"
+        :x1="dependency.x1"
+        :y1="dependency.y1"
+        :x2="dependency.x2"
+        :y2="dependency.y2"
+        marker-end="url(#arrow)"
+      />
+    </g>
     <g font-family="sans-serif" font-size="12" dominant-baseline="middle">
       <text
         v-for="(task,index) in tasks"
@@ -102,7 +115,7 @@
 
 <script lang="ts">
 import { Component, Vue, Prop } from "vue-property-decorator";
-import { Task } from "@/types";
+import { Task, DependencyType } from "@/types";
 import { addDays, subDays, parse, differenceInCalendarDays } from "date-fns";
 interface Rect {
   x: number;
@@ -186,12 +199,12 @@ export default class GanttChart extends Vue {
     }
     return result;
   }
-  public get accumulatedPeriods(): Array<Line | null> {
-    const periods = new Array<Line | null>();
+  public get accumulatedPeriods(): Array<Line> {
+    const periods = new Array<Line>();
     for (let i = 0; i < this.tasks.length; i++) {
       const task = this.tasks[i];
       const fastDateLastDate = this.$store.getters.getFastDateLastDateOfTasks(
-        task.id
+       task.id
       );
       if (fastDateLastDate !== null) {
         const fastDate = fastDateLastDate.fast;
@@ -210,6 +223,34 @@ export default class GanttChart extends Vue {
       }
     }
     return periods;
+  }
+  public get dependencyGraphs(): Line[] {
+    const periods = new Array<Line>();
+      for (let dependency of this.$store.state.dependencies) {
+          const fromTask = this.$store.getters.getTaskById(dependency.from);
+          const toTask = this.$store.getters.getTaskById(dependency.to);
+          let x1 = 0;
+          if (dependency.type === DependencyType.StartToStart || dependency.type === DependencyType.StartToFinish) {
+            x1 = differenceInCalendarDays(fromTask.start, this.start) * this.dateWidth;
+          } else {
+            x1 = (differenceInCalendarDays(fromTask.end, this.start) + 1) * this.dateWidth;
+          }
+          let x2 = 0;
+          if (dependency.type === DependencyType.FinishToStart || dependency.type === DependencyType.FinishToFinish) {
+            x2 = differenceInCalendarDays(toTask.start, this.start) * this.dateWidth;
+          } else {
+            x2 = (differenceInCalendarDays(toTask.end, this.start) + 1) * this.dateWidth;
+          }
+          const y1 = this.tasks.indexOf(fromTask) * this.lineHeight + this.lineHeight / 2;
+          const y2 = this.tasks.indexOf(toTask) * this.lineHeight + this.lineHeight / 2;
+        periods.push({
+          x1,
+          y1,
+          x2,
+          y2,
+        });
+      }
+      return periods;
   }
   public selectedRect: number | null = null;
   public selectedPos: Pos | null = null;

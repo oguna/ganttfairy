@@ -12,12 +12,13 @@
       @click="openDialog(index+1, task)"
     >#{{task.id}}: {{task.title}}
     <v-chip v-if="task.parent" x-small outlined>Parent:#{{task.parent}}</v-chip>
+    <v-chip v-for="dependency of dependencies(task.id)" :key="dependency.id" x-small outlined>{{dependency.text}}</v-chip>
     </div>
   </div>
 </template>
 <script lang="ts">
 import { Component, Vue, Prop } from "vue-property-decorator";
-import { Task } from "@/types";
+import { Task, Dependency } from "@/types";
 @Component
 export default class DraggableList extends Vue {
   @Prop()
@@ -46,6 +47,19 @@ export default class DraggableList extends Vue {
   public draggingIndex: number | null = null;
   public openDialog(index: number, task: Task) {
     this.$emit("open-dialog", task);
+  }
+  public dependencies(id: number) {
+    const types = [
+  'FS',
+  'SS',
+  'FF',
+  'SF']
+    return this.$store.state.dependencies
+    .filter((v:Dependency)=>v.to===id)
+    .map((v:Dependency) => {return {
+      'text': `${types[v.type]}#${v.id}`,
+      'value': v.id,
+    }});
   }
 }
 </script>

@@ -255,7 +255,7 @@ export default class Home extends Vue {
         parent: null,
         title: "",
         start: new Date(),
-        end: new Date()
+        end: new Date(),
       };
     } else {
       this.edittingTask = Object.assign({}, task);

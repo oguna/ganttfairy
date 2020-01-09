@@ -1,6 +1,6 @@
 import Vue from 'vue'
 import Vuex, { mapActions } from 'vuex'
-import {Task, RootState} from '@/types';
+import {Task, RootState, Dependency, DependencyType} from '@/types';
 import { parseVariousDateString } from '@/utils';
 import {addDays, format} from 'date-fns';
 
@@ -46,12 +46,23 @@ for (let i = 1; i < 50; i++) {
   });
 }
 
+const dependencies: Dependency[] = [
+  {
+    id: 1,
+    type: DependencyType.FinishToStart,
+    from: 2,
+    to: 3,
+  }
+]
+
 export default new Vuex.Store({
   state: {
     tasks,
     nextTaskId: 54,
     title: 'Unnamed',
     magnify: 100,
+    dependencies: dependencies,
+    nextDependencyId: 2,
   } as RootState,
   getters: {
     getTaskById: (state) => (id: number) => {
@@ -123,6 +134,17 @@ export default new Vuex.Store({
     },
     setMagnify(state, zoom: number) {
       state.magnify = zoom;
+    },
+    deleteDependency(state, id: number) {
+      const index = state.dependencies.findIndex(v => v.id === id);
+      if (index === -1) {
+        throw new RangeError("invalid Dependency id: " + id);
+      }
+      state.dependencies.splice(index, 1);
+    },
+    addDependency(state, payload: Dependency) {
+      payload.id = state.nextDependencyId++;
+      state.dependencies.push(payload);
     }
   },
   actions: {

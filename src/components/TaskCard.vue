@@ -68,6 +68,37 @@
           </v-list-item>
         </v-list-item-group>
       </v-list>
+      <v-divider></v-divider>
+      <v-label>Dependency</v-label>
+      <v-list dense>
+        <v-list-item-group>
+          <v-list-item v-for="dependency in dependenciesToThis" :key="dependency.id">
+            <v-list-item-content>
+              <v-list-item-title>
+                {{dependency.text}}
+              </v-list-item-title>
+            </v-list-item-content>
+            <v-list-item-icon>
+              <v-btn icon small @click="deleteDependency(dependency.id)">
+                <v-icon>mdi-delete</v-icon>
+              </v-btn>
+            </v-list-item-icon>
+          </v-list-item>
+        </v-list-item-group>
+      </v-list>
+      <v-select
+        v-model="dependencyType"
+        :items="dependencyTypes"
+        label="New dependency type">
+      </v-select>
+      <v-select
+        v-model="dependencyTask"
+        :items="tasksForNewDependency"
+        item-text="text"
+        item-value="value"
+        label="New dependency from">
+      </v-select>
+      <v-btn block @click="addNewDependency">New Dependency</v-btn>
     </v-card-text>
     <v-divider></v-divider>
     <v-card-actions>
@@ -81,10 +112,50 @@
 
 <script lang="ts">
 import { Component, Vue, Prop } from "vue-property-decorator";
-import { Task } from "@/types";
+import { Task, Dependency } from "@/types";
 import {format, parse} from 'date-fns';
 @Component
 export default class TaskCard extends Vue {
+  public get dependencyTypes() {
+    return [
+      {'text': 'FS: FinishToStart', value: 0},
+      {'text': 'SS: StartToStart', value: 1},
+      {'text': 'FF: FinishToFinish', value: 2},
+      {'text': 'SF: StartToFinish', value: 3},
+    ]
+  }
+  public get tasks() {
+    return this.$store.state.tasks;
+  }
+  public get tasksForNewDependency() {
+    return this.$store.state.tasks
+    .filter((v: Task) => v.id !== this.task!.id)
+    .map((v:Task) => {return {
+      'text': `#${v.id}: ${v.title}`,
+      'value': v.id
+    }})
+  }
+  public addNewDependency() {
+    if (this.dependencyTask === undefined || this.dependencyTask === null) {
+      return;
+    }
+    this.$store.commit('addDependency', {
+      'from': this.dependencyTask,
+      'to': this.task!.id,
+      'type': this.dependencyTypes,
+    });
+  }
+  public dependencyType: number = 0;;
+  public dependencyTask: number = 0;;
+  public get dependenciesToThis() {
+    const types = ['FS', 'SS', 'FF', 'SF'];
+    return this.$store.state.dependencies
+    .filter((v:Dependency)=>v.to===this.task!.id)
+    .map((v:Dependency) => {return {
+      'text': `${types[v.type]} - # ${v.id}: ${this.$store.getters.getTaskById(v.id).title}`,
+      'id': v.id,
+    }});
+  }
   public get startDateISOString():string {
     return format(this.task!.start, 'yyyy-MM-dd');
   }
@@ -133,6 +204,9 @@ export default class TaskCard extends Vue {
     } else {
       return num + " children";
     }
+  }
+  public deleteDependency(id: number) {
+    this.$store.commit('deleteDependency', id)
   }
 }
 </script>
