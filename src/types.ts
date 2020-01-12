@@ -20,6 +20,12 @@ export interface Dependency {
   from: number;
 }
 
+export interface TaskTreeNode {
+  id: number;
+  open: boolean;
+  children: TaskTreeNode[];
+}
+
 export interface RootState {
   tasks: Task[];
   nextTaskId: number;
@@ -27,4 +33,5 @@ export interface RootState {
   magnify: number;
   dependencies: Dependency[];
   nextDependencyId: number;
+  taskTreeNodes: TaskTreeNode[];
 }

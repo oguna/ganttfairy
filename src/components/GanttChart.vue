@@ -11,6 +11,14 @@
   >
     <title id="ganttchart" lang="en">{{title}}</title>
     <rect
+      v-if="activeRect"
+      :x="activeRect.x"
+      :y="activeRect.y"
+      :width="activeRect.w"
+      :height="activeRect.h"
+      fill="whitesmoke"
+    />
+    <rect
       v-for="(rect,index) in weekendRects"
       :key="'weekend'+index"
       :x="rect.x"
@@ -114,7 +122,7 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue, Prop } from "vue-property-decorator";
+import { Component, Vue, Prop, Emit } from "vue-property-decorator";
 import { Task, DependencyType } from "@/types";
 import { addDays, subDays, parse, differenceInCalendarDays } from "date-fns";
 interface Rect {
@@ -149,6 +157,23 @@ export default class GanttChart extends Vue {
   public dateWidth!: number;
   @Prop({ default: 24 })
   public lineHeight!: number;
+  @Prop()
+  public value!: number;
+  @Emit()
+  public input(value: number) {}
+
+  public get activeRect(): Rect|null {
+    const index = this.tasks.findIndex(v => v.id === this.value);
+    if (index === -1) {
+      return null;
+    }
+    return {
+      x: 0,
+      y: this.lineHeight * index,
+      w: this.width,
+      h: 24,
+    };
+  }
 
   public get height() {
     return this.tasks.length * this.lineHeight;
@@ -229,6 +254,11 @@ export default class GanttChart extends Vue {
       for (let dependency of this.$store.state.dependencies) {
           const fromTask = this.$store.getters.getTaskById(dependency.from);
           const toTask = this.$store.getters.getTaskById(dependency.to);
+          const fromTaskIndex = this.tasks.findIndex(v => v.id === dependency.from);
+          const toTaskIndex = this.tasks.findIndex(v => v.id === dependency.to);
+          if (fromTaskIndex === -1 || toTaskIndex === -1) {
+            continue;
+          }
           let x1 = 0;
           if (dependency.type === DependencyType.StartToStart || dependency.type === DependencyType.StartToFinish) {
             x1 = differenceInCalendarDays(fromTask.start, this.start) * this.dateWidth;
@@ -236,13 +266,13 @@ export default class GanttChart extends Vue {
             x1 = (differenceInCalendarDays(fromTask.end, this.start) + 1) * this.dateWidth;
           }
           let x2 = 0;
-          if (dependency.type === DependencyType.FinishToStart || dependency.type === DependencyType.FinishToFinish) {
+          if (dependency.type === DependencyType.FinishToStart || dependency.type === DependencyType.StartToStart) {
             x2 = differenceInCalendarDays(toTask.start, this.start) * this.dateWidth;
           } else {
             x2 = (differenceInCalendarDays(toTask.end, this.start) + 1) * this.dateWidth;
           }
-          const y1 = this.tasks.indexOf(fromTask) * this.lineHeight + this.lineHeight / 2;
-          const y2 = this.tasks.indexOf(toTask) * this.lineHeight + this.lineHeight / 2;
+          const y1 = fromTaskIndex * this.lineHeight + this.lineHeight / 2;
+          const y2 = toTaskIndex * this.lineHeight + this.lineHeight / 2;
         periods.push({
           x1,
           y1,
@@ -283,6 +313,7 @@ export default class GanttChart extends Vue {
   }
   public taskMousedown(index: number, event: MouseEvent) {
     if (event.button === 0) {
+      this.input(this.tasks[index].id);
       this.selectedRect = index;
       this.selectedPos = { x: event.clientX, y: event.clientY };
       event.preventDefault();

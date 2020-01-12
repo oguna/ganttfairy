@@ -1,6 +1,6 @@
 import Vue from 'vue'
 import Vuex, { mapActions } from 'vuex'
-import {Task, RootState, Dependency, DependencyType} from '@/types';
+import {Task, RootState, Dependency, DependencyType, TaskTreeNode} from '@/types';
 import { parseVariousDateString } from '@/utils';
 import {addDays, format} from 'date-fns';
 
@@ -52,8 +52,34 @@ const dependencies: Dependency[] = [
     type: DependencyType.FinishToStart,
     from: 2,
     to: 3,
+  },
+  {
+    id: 2,
+    type: DependencyType.FinishToFinish,
+    from: 4,
+    to: 5,
   }
 ]
+
+const taskTreeNodes: TaskTreeNode[] = tasks.map((v: Task) => {return {
+  id: v.id,
+  open: true,
+  children: []
+} as TaskTreeNode})
+taskTreeNodes[0].children.push(taskTreeNodes[1]);
+taskTreeNodes[2].children.push(taskTreeNodes[3]);
+taskTreeNodes.splice(3, 1);
+taskTreeNodes.splice(1, 1);
+
+function traverseTaskTreeNode(node: TaskTreeNode): number[] {
+  const array = [node.id];
+  if (node.open && node.children) {
+    for (const child of node.children) {
+      traverseTaskTreeNode(child).forEach(v => array.push(v));
+    }
+  }
+  return array;
+}
 
 export default new Vuex.Store({
   state: {
@@ -62,9 +88,16 @@ export default new Vuex.Store({
     title: 'Unnamed',
     magnify: 100,
     dependencies: dependencies,
-    nextDependencyId: 2,
+    nextDependencyId: 3,
+    taskTreeNodes: taskTreeNodes,
   } as RootState,
   getters: {
+    getFlatTreeTaskIds: (state) => {
+      return state.taskTreeNodes.flatMap(v => traverseTaskTreeNode(v));
+    },
+    getFlatTreeTasks: (state, getters) => {
+      return getters.getFlatTreeTaskIds.map((id: number) => getters.getTaskById(id));
+    },
     getTaskById: (state) => (id: number) => {
       return state.tasks.find(task => task.id === id);
     },

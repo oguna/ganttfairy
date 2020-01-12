@@ -110,17 +110,22 @@
         </v-dialog>
       </v-toolbar-items>
     </v-toolbar>
-    <div class="gantt">
-      <div :style="styles" style="white-space: nowrap;">
+    <div class="gantt" :style="styles" style="white-space: nowrap;">
     <div class="left">
       <div class="left_header"></div>
-      <draggable-list v-on:open-dialog="openTaskDialog" :tasks="tasks"></draggable-list>
+      <draggable-tree-view
+      style="overflow-x:hidden"
+      v-on:open-dialog="openTaskDialog"
+      :tasks="tasks"
+      :taskTree="taskTree"
+      v-model="selectedTaskId"
+      ></draggable-tree-view>
     </div>
     <div class="grip disable-select"
     @dragstart="dragstart"
     @dragend="dragend"
     draggable="true"
-    @dblclick="gripOffset = null"></div>
+    ></div>
     <div class="right">
       <div class="right_header">
           <div class="month_header">
@@ -133,18 +138,18 @@
             <div class="date" v-for="date in dates" :key="date.getTime()">{{date.getDate()}}</div>
           </div>
           <div class="week_header">
-            <div class="date" v-for="date in dates" :key="date.getTime()">{{"日月火水木金土"[date.getDay()]}}</div>
+            <div class="date" v-for="date in dates" :key="date.getTime()">{{"SMTWTFS"[date.getDay()]}}</div>
           </div>
       </div>
       <gantt-chart
       :start="startDate"
       :end="endDate"
-      :tasks="tasks"
+      :tasks="flatTreeTasks"
       :dates="dates"
       :dateWidth="dateWidth"
+      v-model="selectedTaskId"
       ></gantt-chart>
     </div>
-  </div>
     </div>
     <v-dialog v-model="taskDialog" max-width="290">
       <task-card
@@ -176,13 +181,15 @@ import ExportCard from "@/components/ExportCard.vue";
 import ImportCard from "@/components/ImportCard.vue";
 import GanttChart from "@/components/GanttChart.vue";
 import DraggableList from "@/components/DraggableList.vue";
+import DraggableTreeView from "@/components/DraggableTreeView/index.vue";
 @Component({
   components: {
     TaskCard,
     ExportCard,
     ImportCard,
     GanttChart,
-    DraggableList
+    DraggableList,
+    DraggableTreeView
   }
 })
 export default class Home extends Vue {
@@ -200,6 +207,9 @@ export default class Home extends Vue {
   public set endDateISOString(value: string) {
     this.endDate = parse(value, 'yyyy-MM-dd', new Date());
   }
+  public get taskTree() {
+    return this.$store.state.taskTreeNodes;
+  }
   public startDateMenu = false;
   public endDateMenu = false;
   public startDate = new Date(2019, 10, 1);
@@ -210,9 +220,13 @@ export default class Home extends Vue {
   public edittingTask: Task | null = null;
   public exportDialog = false;
   public importDialog = false;
+  public selectedTaskId = 0;
   public  = true;
   public get items(): Task[] {
     return this.$store.state.tasks;
+  }
+  public get flatTreeTasks(): Task[] {
+    return this.$store.getters.getFlatTreeTasks;
   }
   public get dates(): Date[] {
     const dates = [];
@@ -293,12 +307,14 @@ export default class Home extends Vue {
   public get tasks(): Task[] {
     return this.$store.state.tasks;
   }
-  public gripOffset: number|null = 200;
+  public gripOffset: number = 200;
   public get styles() {
     return {
-      "--gripOffset": this.gripOffset === null ? 'auto' : `${this.gripOffset}px`,
+      "--gripOffset": `${this.gripOffset}px`,
       "--numOfTasks": this.tasks.length,
       "--dateWidth": this.dateWidth+'px',
+      "--ganttWidth": (this.dateWidth * this.dates.length)+'px',
+      "--screenWidth": (this.dateWidth * this.dates.length + this.gripOffset!)+'px',
     };
   }
   public dragstart(e: DragEvent) {
@@ -312,7 +328,9 @@ export default class Home extends Vue {
 </script>
 
 <style scoped>
-
+div.home {
+  width: var(--gripOffset)
+}
 .container {
   margin: 0;
   padding: 0;
@@ -346,6 +364,7 @@ div.left_header {
   left: 0;
   border-top: 1px solid gray;
   border-bottom: 1px solid gray;
+  z-index: 2;
 }
 div.right {
   display: inline-block;
@@ -359,6 +378,7 @@ div.right_header {
   position: -webkit-sticky;
   position: sticky;
   top: 0;
+  width: var(--ganttWidth);
 }
 div.grip {
   display: inline-block;
