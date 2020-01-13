@@ -116,7 +116,6 @@
       <draggable-tree-view
       style="overflow-x:hidden"
       v-on:open-dialog="openTaskDialog"
-      :tasks="tasks"
       :taskTree="taskTree"
       v-model="selectedTaskId"
       ></draggable-tree-view>
