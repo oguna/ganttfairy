@@ -8,7 +8,7 @@
           <v-icon v-else>mdi-menu-right</v-icon>
         </v-btn>
         <span v-else style="padding-left:24px" />
-        <span @click="openDialog(task)" style="border: #dddddd solid 1px">#{{this.task.id}}</span>
+        <span @click="openDialog(task)" style="border: #dddddd solid 1px; cursor: pointer">#{{this.task.id}}</span>
         <editable-text class="mx-1" v-model="task.title"></editable-text>
         <v-chip v-if="task.parent" x-small outlined>Parent:#{{task.parent}}</v-chip>
         <v-chip

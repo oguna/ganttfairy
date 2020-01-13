@@ -27,6 +27,16 @@
       :height="rect.h"
       class="weekend"
     />
+    <g class="foldedRect">
+      <rect
+        v-for="(span,index) in siblingRects"
+        :key="index"
+        :x="span.x"
+        :y="span.y"
+        :width="span.w"
+        :height="span.h"
+        />
+    </g>
     <template v-for="(rect,index) in boxes">
       <rect
         @mousedown="taskStartMousedown(index,$event)"
@@ -161,7 +171,6 @@ export default class GanttChart extends Vue {
   public value!: number;
   @Emit()
   public input(value: number) {}
-
   public get activeRect(): Rect|null {
     const index = this.tasks.findIndex(v => v.id === this.value);
     if (index === -1) {
@@ -210,6 +219,23 @@ export default class GanttChart extends Vue {
     }
     return result;
   }
+  public get siblingRects(): Rect[] {
+    const result = new Array<Rect>();
+    for (let i = 0; i < this.tasks.length; i++) {
+      const task = this.tasks[i];
+      const spans: {s:Date,e:Date}[] = this.$store.getters.getDeduplicatedSpansOfSiblingTask(task.id);
+      for (let span of spans) {
+        const x = differenceInCalendarDays(span.s, this.start) * this.dateWidth;
+        const y = this.lineHeight * i + 4;
+        const w = (Math.abs(differenceInCalendarDays(span.s, span.e)) + 1) * this.dateWidth;
+        const h = 16;
+        result.push({
+          x, y, w, h
+        });
+      }
+    }
+    return result;
+  }
   public get weekendRects(): Rect[] {
     const result: Rect[] = [];
     for (let i = 0; i < this.dates.length; i++) {
@@ -224,7 +250,7 @@ export default class GanttChart extends Vue {
     }
     return result;
   }
-  public get accumulatedPeriods(): Array<Line> {
+  public get accumulatedPeriods(): Line[] {
     const periods = new Array<Line>();
     for (let i = 0; i < this.tasks.length; i++) {
       const task = this.tasks[i];
@@ -402,5 +428,10 @@ rect.grip:hover {
   stroke-width: 0.5px;
   stroke: blue;
   cursor: w-resize;
+}
+g.foldedRect {
+  fill: lightsteelblue;
+  stroke-width: 0.5px;
+  stroke: blue;
 }
 </style>

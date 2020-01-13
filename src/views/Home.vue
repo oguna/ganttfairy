@@ -280,10 +280,11 @@ export default class Home extends Vue {
     this.taskDialog = false;
   }
   public saveTaskDialog() {
-    if (this.edittingTask!.id === null) {
+    if (this.edittingTask!.id === 0) {
       this.$store.commit("addTask", this.edittingTask);
     } else {
-      this.$store.commit("updateTask", this.edittingTask);
+      this.$store.dispatch('updateTaskWithTree', this.edittingTask);
+      //this.$store.commit("updateTask", this.edittingTask);
     }
     this.closeTaskDialog();
   }

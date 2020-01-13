@@ -81,6 +81,19 @@ function traverseTaskTreeNode(node: TaskTreeNode): number[] {
   return array;
 }
 
+function findTaskTreeNode(nodes: TaskTreeNode[], id: number):TaskTreeNode|null {
+  for (let node of nodes) {
+    if (node.id === id) {
+      return node;
+    }
+    const childResult = findTaskTreeNode(node.children, id);
+    if (childResult !== null) {
+      return childResult;
+    }
+  }
+  return null;
+}
+
 export default new Vuex.Store({
   state: {
     tasks,
@@ -98,7 +111,7 @@ export default new Vuex.Store({
     getFlatTreeTasks: (state, getters) => {
       return getters.getFlatTreeTaskIds.map((id: number) => getters.getTaskById(id));
     },
-    getTaskById: (state) => (id: number) => {
+    getTaskById: (state) => (id: number): Task|undefined => {
       return state.tasks.find(task => task.id === id);
     },
     getChildrenTasksById: (state) => (id: number) => {
@@ -112,12 +125,12 @@ export default new Vuex.Store({
       }
       return result;
     },
-    getSiblingTasksById: (state, getters) => (id: number) => {
+    getSiblingTasksById: (state, getters) => (id: number):Task[] => {
       const children = getters.getChildrenTasksById(id);
-      const others = children.flatMap((task: Task) => getters.getChildrenTasksById(id));
+      const others = children.flatMap((task: Task) => getters.getSiblingTasksById(task.id));
       return children.concat(others);
     },
-    getFastDateLastDateOfTasks: (state, getters) => (id: number) => {
+    getFastDateLastDateOfTasks: (state, getters) => (id: number):{fast:Date, last:Date}|null=> {
       const task = getters.getTaskById(id);
       const siblingTasks: Task[] = getters.getSiblingTasksById(id);
       if (siblingTasks.length === 0) {
@@ -135,6 +148,32 @@ export default new Vuex.Store({
       }
       return {fast, last};
     },
+    getDeduplicatedSpansOfSiblingTask: (state, getters) => (id: number): {s:Date,e:Date}[] => {
+      const tasks = getters.getSiblingTasksById(id);
+      if (tasks.length == 0) {
+        return [];
+      }
+      const startEnds = tasks.map((task:Task) => {
+        return {s: task.start, e: task.end};
+      })
+      .sort((a:any,b:any) => a.s - b.s)
+      let s = startEnds[0].s;
+      let e = startEnds[0].e;
+      const result:{s:Date,e:Date}[] = [];
+      for (let task of startEnds.filter((v:any,i:number) => i > 0)) {
+        if (e < task.s) {
+          result.push({s, e});
+          s = task.s;
+          e = task.e;
+        } else {
+          if (e < task.e) {
+            e = task.e;
+          }
+        }
+      }
+      result.push({s, e});
+      return result;
+    }
   },
   mutations: {
     setTitle(state, title) {
@@ -147,9 +186,48 @@ export default new Vuex.Store({
       }
       state.tasks.splice(index, 1, task);
     },
+    moveTaskTreeNode(state, payload:{taskId: number, parentId: number|undefined, index: number|undefined}) {
+      const task = state.tasks.find(v => v.id === payload.taskId);
+      if (task === undefined) {
+        throw new RangeError();
+      }
+      const oldParent = task.parent;
+      let node: TaskTreeNode|undefined = undefined;
+      if (oldParent) {
+        // Remove this node from children list of old parent node.
+        const oldParentNode = findTaskTreeNode(state.taskTreeNodes, oldParent);
+        node = oldParentNode!.children.find(v => v.id === payload.taskId);
+        oldParentNode!.children = oldParentNode!.children.filter(v => v.id !== payload.taskId);
+      } else {
+        // Remove from root list
+        node = state.taskTreeNodes.find(v => v.id === payload.taskId);
+        state.taskTreeNodes = state.taskTreeNodes.filter(v => v.id !== payload.taskId);
+      }
+      if (payload.parentId) {
+        const newParentNode = findTaskTreeNode(state.taskTreeNodes, payload.parentId);
+        if (payload.index) {
+          newParentNode!.children.splice(payload.index, 0, node!);
+        } else {
+          newParentNode!.children.push(node!);
+        }
+      } else {
+        if (payload.index) {
+          state.taskTreeNodes.splice(payload.index, 0, node!);
+        } else {
+          state.taskTreeNodes.push(node!);
+        }
+      }
+    }
+    ,
     addTask(state, task: Task) {
       task.id = state.nextTaskId++;
       state.tasks.push(Object.assign({}, task));
+      if (task.parent) {
+        const node = findTaskTreeNode(state.taskTreeNodes, task.parent);
+        node!.children.push({id: task.id, open: true, children: []})
+      } else {
+        state.taskTreeNodes.push({id: task.id, open: true, children: []})
+      }
     },
     setTasks(state, tasks: Task[]) {
       state.tasks = tasks;
@@ -231,6 +309,13 @@ export default new Vuex.Store({
       }
       commit('setTasks', tasks);
     },
+    async updateTaskWithTree({state, getters, commit}, task: Task) {
+        const oldTask = getters.getTaskById(task.id);
+        if (oldTask.parent !== task.parent) {
+          commit('moveTaskTreeNode', {taskId: task.id, parentId: task.parent})
+        }
+        commit('updateTask', task);
+    }
   },
   modules: {
   }
