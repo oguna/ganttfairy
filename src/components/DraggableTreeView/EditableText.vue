@@ -1,6 +1,6 @@
 <template>
   <span
-    contenteditable="true"
+    :contenteditable="editable"
     v-text="text"
     @input="update"
     @focus="focus"
@@ -16,6 +16,9 @@ import { Component, Vue, Prop, Emit, Watch } from "vue-property-decorator";
 export default class EditableText extends Vue {
   @Prop()
   public value!: string;
+
+  @Prop()
+  public editable!: boolean;
 
   private text: string = "";
   private focusIn: boolean = false;

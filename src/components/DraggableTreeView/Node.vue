@@ -9,7 +9,7 @@
         </v-btn>
         <span v-else style="padding-left:24px" />
         <span @click="openDialog(task)" style="border: #dddddd solid 1px; cursor: pointer">#{{this.task.id}}</span>
-        <editable-text class="mx-1" v-model="task.title"></editable-text>
+        <editable-text class="mx-1" v-model="task.title" :editable="task.id === value"></editable-text>
         <v-chip v-if="task.parent" x-small outlined>Parent:#{{task.parent}}</v-chip>
         <v-chip
           v-for="dependency of dependencies(task.id)"
