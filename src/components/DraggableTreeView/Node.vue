@@ -38,8 +38,8 @@ import { Component, Vue, Prop, Emit } from "vue-property-decorator";
 import { Task, Dependency, TaskTreeNode } from "@/types";
 import EditableText from "./EditableText.vue";
 @Component({
+  name: 'draggable-tree-view-node',
   components: {
-    DraggableTreeViewNode,
     EditableText
   }
 })
