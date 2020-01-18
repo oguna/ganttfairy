@@ -7,7 +7,6 @@
       dense
       elevation=0
     >
-      <v-spacer></v-spacer>
       <v-toolbar-title> 
       {{title}}
       <v-menu
@@ -29,8 +28,29 @@
           </v-card-text>
         </v-card>
       </v-menu>
-        - Gantt Fairy</v-toolbar-title>
+        </v-toolbar-title>
       <v-spacer></v-spacer>
+      <v-btn-toggle group tile borderless dense>
+      <v-btn text to="/">
+        <v-icon>mdi-home</v-icon>
+        Overview</v-btn>
+      <v-btn text to="/table">
+        <v-icon>mdi-table</v-icon>
+        Table</v-btn>
+      <v-btn text to="/kanban">
+        <v-icon>mdi-bulletin-board</v-icon>
+        Kanban</v-btn>
+      <v-btn text to="/ganttchart">
+        <v-icon>mdi-chart-timeline</v-icon>
+        Ganttchart</v-btn>
+      <v-btn text to="/calendar">
+        <v-icon>mdi-calendar</v-icon>
+        Calendar</v-btn>
+      </v-btn-toggle>
+      <v-spacer></v-spacer>
+      <v-btn text icon>
+        <v-icon>mdi-account</v-icon>
+      </v-btn>
     </v-app-bar>
 
     <v-content>
