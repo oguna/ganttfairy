@@ -1,5 +1,8 @@
 <template>
   <v-app>
+    <side-bar
+    v-model="drawer">
+    </side-bar>
     <v-app-bar
       app
       color="primary"
@@ -7,6 +10,7 @@
       dense
       elevation=0
     >
+      <v-app-bar-nav-icon @click.stop="drawer = !drawer" />
       <v-toolbar-title> 
       {{title}}
       <v-menu
@@ -96,9 +100,15 @@
 
 <script lang="ts">
 import {Component, Vue} from "vue-property-decorator";
+import SideBar from '@/components/SideBar.vue';
 
-@Component
-export default class App extends Vue{
+@Component({
+  components: {
+    SideBar
+  }
+})
+export default class App extends Vue {
+  public drawer = false;
   public menu = false;
   public get title() {
     return this.$store.state.title;
