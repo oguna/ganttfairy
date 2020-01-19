@@ -17,17 +17,23 @@
           <th>Title</th>
           <th>Start</th>
           <th>End</th>
+          <th>Days</th>
           <th>Status</th>
         </tr>
       </thead>
       <tbody>
         <tr v-for="task in tasks" :key="task.id">
-          <td @click="openTaskDialog(task)">
-            <v-btn text small>{{task.id}}</v-btn>
+          <td>
+            <v-btn
+              text
+              small
+              @click="openTaskDialog(task)"
+              >{{task.id}}</v-btn>
           </td>
           <td>{{task.title}}</td>
           <td>{{task.start | dateLocalize}}</td>
           <td>{{task.end | dateLocalize }}</td>
+          <td>{{ Math.abs(differenceInDays(task.end, task.start) + 1) }}</td>
           <td>{{task.status | getStatusLabel }}</td>
         </tr>
       </tbody>
@@ -46,7 +52,7 @@
 <script lang="ts">
 import { Component, Vue, Prop } from "vue-property-decorator";
 import { Task, TaskStatusType } from "@/types";
-import { format } from 'date-fns'
+import { format, differenceInDays } from 'date-fns'
 import { ja } from 'date-fns/locale'
 import TaskCard from '@/components/TaskCard.vue';
 @Component({
@@ -67,6 +73,8 @@ export default class Table extends Vue {
   public get tasks() {
     return this.$store.state.tasks;
   }
+
+  public differenceInDays = differenceInDays;
 
   public dialog = false;
 
