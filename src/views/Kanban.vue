@@ -1,7 +1,12 @@
 <template>
   <div class="kanban">
-    <h1>Kanban</h1>
-    <board-task :tasks="tasks" />
+    <v-toolbar dense flat>
+      <v-toolbar-title>Kanban</v-toolbar-title>
+      <v-divider vertical inset class="mx-4"></v-divider>
+      <v-toolbar-items>
+      </v-toolbar-items>
+    </v-toolbar>
+    <board-task class="board-task" :tasks="tasks" />
   </div>
 </template>
 
@@ -26,3 +31,10 @@ export default class Kanban extends Vue {
   }
 }
 </script>
+
+<style scoped>
+.board-task {
+  width: 100vw;
+  height: calc(100vh - 124px);
+}
+</style>

@@ -4,6 +4,7 @@ export interface Task {
   title: string;
   start: Date;
   end: Date;
+  status: TaskStatusType | null;
 }
 
 export enum DependencyType {
@@ -11,6 +12,12 @@ export enum DependencyType {
   StartToStart,
   FinishToFinish,
   StartToFinish,
+}
+
+export enum TaskStatusType {
+  TODO,
+  WIP,
+  DONE,
 }
 
 export interface Dependency {

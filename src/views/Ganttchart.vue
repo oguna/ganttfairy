@@ -269,6 +269,7 @@ export default class Ganttchart extends Vue {
         title: "",
         start: new Date(),
         end: new Date(),
+        status: null,
       };
     } else {
       this.edittingTask = Object.assign({}, task);

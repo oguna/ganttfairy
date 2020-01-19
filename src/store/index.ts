@@ -1,6 +1,6 @@
 import Vue from 'vue'
 import Vuex, { mapActions } from 'vuex'
-import {Task, RootState, Dependency, DependencyType, TaskTreeNode} from '@/types';
+import {Task, RootState, Dependency, DependencyType, TaskTreeNode, TaskStatusType} from '@/types';
 import { parseVariousDateString } from '@/utils';
 import {addDays, format} from 'date-fns';
 
@@ -13,6 +13,7 @@ const tasks: Task[] = [
     title: '見積もり',
     start: new Date('2019-11-11T00:00:00'),
     end: new Date('2019-11-20T00:00:00'),
+    status: null,
   },
   {
     id: 2,
@@ -20,6 +21,7 @@ const tasks: Task[] = [
     title: '見積もりレビュー',
     start: new Date('2019-11-21T00:00:00'),
     end: new Date('2019-11-22T00:00:00'),
+    status: null,
   },
   {
     id: 3,
@@ -27,6 +29,7 @@ const tasks: Task[] = [
     title: '設計',
     start: new Date('2019-11-30T00:00:00'),
     end: new Date('2019-12-10T00:00:00'),
+    status: null,
   },
   {
     id: 4,
@@ -34,6 +37,7 @@ const tasks: Task[] = [
     title: '設計レビュー',
     start: new Date('2019-12-11T00:00:00'),
     end: new Date('2019-12-12T00:00:00'),
+    status: null,
   },
 ];
 for (let i = 1; i < 50; i++) {
@@ -43,7 +47,12 @@ for (let i = 1; i < 50; i++) {
     title: 'モジュール'+i,
     start: addDays(new Date('2019-12-20T00:00:00'), i * 2),
     end: addDays(new Date('2019-12-24T00:00:00'), i*3),
+    status: null,
   });
+}
+
+for (const task of tasks) {
+  task.status = TaskStatusType.TODO;
 }
 
 const dependencies: Dependency[] = [

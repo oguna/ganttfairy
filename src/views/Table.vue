@@ -1,6 +1,6 @@
 <template>
   <div class="table">
-    <v-toolbar dense>
+    <v-toolbar dense flat>
       <v-toolbar-title>
         Table
       </v-toolbar-title>
@@ -11,12 +11,13 @@
     </v-toolbar>
     <v-simple-table>
       <template v-slot:default>
-      <thead>
+      <thead class="blue-grey lighten-5">
         <tr>
           <th>#</th>
           <th>Title</th>
           <th>Start</th>
           <th>End</th>
+          <th>Status</th>
         </tr>
       </thead>
       <tbody>
@@ -25,6 +26,7 @@
           <td>{{task.title}}</td>
           <td>{{task.start | dateLocalize}}</td>
           <td>{{task.end | dateLocalize }}</td>
+          <td>{{task.status | getStatusLabel }}</td>
         </tr>
       </tbody>
       </template>
@@ -34,13 +36,16 @@
 
 <script lang="ts">
 import { Component, Vue, Prop } from "vue-property-decorator";
-import { Task } from "@/types";
+import { Task, TaskStatusType } from "@/types";
 import { format } from 'date-fns'
 import { ja } from 'date-fns/locale'
 @Component({
   filters: {
   dateLocalize(date: Date) {
     return format(date, "yyyy-MM-dd", {locale: ja})
+  },
+  getStatusLabel(status: number) {
+    return Object.entries(TaskStatusType).map(([_, value]) => value)[status];
   }
   }
 })
