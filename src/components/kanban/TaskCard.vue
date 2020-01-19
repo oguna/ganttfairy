@@ -1,6 +1,7 @@
 <template>
     <div class="taskcard" draggable="true"
     @dragstart="dragstart(task, $event)"
+    @dragend="dragend($event)"
     :class="{dragging:(dragging===task.id)}">
             <h3 class="tasktitle">#{{task.id}}: {{task.title}}</h3>
             {{task.start|dateLocalize}} ～ {{task.end|dateLocalize}}
@@ -26,6 +27,9 @@ export default class TaskList extends Vue {
     public dragstart(task: Task, event: DragEvent) {
         event.dataTransfer!.setData('text/plain', "");
         this.$emit('update:dragging', task.id);
+    }
+    public dragend(event: DragEvent) {
+        this.$emit('update:dragging', null);
     }
 }
 </script>

@@ -1,7 +1,10 @@
 <template>
-    <div class="tasklist" draggable="true"
+    <div class="tasklist"
+    :class="{dragover: dragover}"
     @dragover="dragover"
-    @dragenter="dragenter($event)">
+    @dragleave="dragleave"
+    @dragenter="dragenter($event)"
+    @drop="drop($event)">
         <h2 class="title">{{title}} ({{tasks.length}})</h2>
         <div class="scrollble">
             <task-card
@@ -29,8 +32,10 @@ export default class TaskList extends Vue {
     public title!: string;
     @Prop()
     public tasks!: Task[];
+    public nowDragover = false;
     @Prop({default: null})
     public dragging!: number|null;
+    public selectedList: string|null = null;
     public set _dragging(value: number|null) {
         this.$emit('update:dragging', value);
     }
@@ -39,15 +44,26 @@ export default class TaskList extends Vue {
     }
     public dragenter(event: DragEvent) {
         if (this.dragging !== null) {
-            const task: Task = this.$store.getters.getTaskById(this.dragging);
-            task.status = this.status;
-            this.$store.commit('updateTask', task);
-            this._dragging = null;
+            this.nowDragover = true;
+        }
+    }
+    public dragleave(event: DragEvent) {
+        if (this.dragging !== null) {
+            this.nowDragover = false;
         }
     }
     public dragover(event: DragEvent) {
-        if (this.dragging !== null) {
+        if (this.dragging !== null && this.dragging !== this.status) {
             event.preventDefault();
+        }
+    }
+    public drop(event: DragEvent) {
+        event.preventDefault();
+        if (this.dragging !== null) {
+            const task = Object.assign(this.$store.getters.getTaskById(this.dragging), {});
+            task.status = this.status;
+            this.$store.commit('updateTask', task);
+            this.$emit('update:dragging', null);
         }
     }
 }
@@ -71,5 +87,8 @@ div.scrollble {
 .title {
     font-size: 1rem;
     text-align: center;
+}
+.dragover {
+    background-color: pink;
 }
 </style>
