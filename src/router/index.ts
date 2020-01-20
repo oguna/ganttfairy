@@ -6,6 +6,7 @@ import Table from '../views/Table.vue'
 import Kanban from '../views/Kanban.vue'
 import Calendar from '../views/Calendar.vue'
 import About from '../views/About.vue'
+import Users from '../views/Users.vue'
 
 Vue.use(VueRouter)
 
@@ -34,6 +35,11 @@ const routes = [
     path: '/calendar',
     name: 'calendar',
     component: Calendar
+  },
+  {
+    path: '/users',
+    name: 'users',
+    component: Users
   },
   {
     path: '/about',

@@ -45,6 +45,20 @@
           </v-list-item-content>
         </v-list-item>
       </v-list>
+      <v-divider></v-divider>
+      <v-list
+        dense
+        nav
+      >
+      <v-subheader>Administration</v-subheader>
+        <v-list-item link to="/users">
+          <v-list-item-content>
+            <v-list-item-title>
+              Users
+            </v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
+      </v-list>
     </v-navigation-drawer>
 </template>
 

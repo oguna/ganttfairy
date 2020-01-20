@@ -3,6 +3,7 @@ import Vuex, { mapActions } from 'vuex'
 import {Task, RootState, Dependency, DependencyType, TaskTreeNode, TaskStatusType} from '@/types';
 import { parseVariousDateString } from '@/utils';
 import {addDays, format} from 'date-fns';
+import users from './modules/users';
 
 Vue.use(Vuex)
 
@@ -103,7 +104,7 @@ function findTaskTreeNode(nodes: TaskTreeNode[], id: number):TaskTreeNode|null {
   return null;
 }
 
-export default new Vuex.Store({
+export default new Vuex.Store<RootState>({
   state: {
     tasks,
     nextTaskId: 54,
@@ -112,7 +113,7 @@ export default new Vuex.Store({
     dependencies: dependencies,
     nextDependencyId: 3,
     taskTreeNodes: taskTreeNodes,
-  } as RootState,
+  },
   getters: {
     getFlatTreeTaskIds: (state) => {
       return state.taskTreeNodes.flatMap(v => traverseTaskTreeNode(v));
@@ -327,5 +328,6 @@ export default new Vuex.Store({
     }
   },
   modules: {
+    users,
   }
 })
