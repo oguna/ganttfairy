@@ -1,5 +1,5 @@
 <template>
-  <span
+  <div
     :contenteditable="editable"
     v-text="text"
     @input="update"
@@ -7,7 +7,7 @@
     @blur="blur"
     v-on:paste="handlePaste"
     ref="textfield"
-  ></span>
+  ></div>
 </template>
 
 <script lang="ts">
@@ -67,9 +67,8 @@ export default class EditableText extends Vue {
 </script>
 
 <style scoped>
-span {
-display: inline-block;
-width: auto;
-height: auto;
+div {
+  display: inline-block;
+  width: 100%;
 }
 </style>

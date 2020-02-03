@@ -9,7 +9,7 @@
       vertical
     ></v-divider>
     </v-toolbar>
-    <v-simple-table>
+    <v-simple-table dense>
       <template v-slot:default>
       <thead class="blue-grey lighten-5">
         <tr>
@@ -30,7 +30,12 @@
               @click="openTaskDialog(task)"
               >{{task.id}}</v-btn>
           </td>
-          <td>{{task.title}}</td>
+          <td>
+            <editable-text
+              v-model="task.title"
+              editable
+            />
+          </td>
           <td>{{task.start | dateLocalize}}</td>
           <td>{{task.end | dateLocalize }}</td>
           <td>{{ Math.abs(differenceInDays(task.end, task.start) + 1) }}</td>
@@ -55,9 +60,11 @@ import { Task, TaskStatusType } from "@/types";
 import { format, differenceInDays } from 'date-fns'
 import { ja } from 'date-fns/locale'
 import TaskCard from '@/components/TaskCard.vue';
+import EditableText from '@/components/DraggableTreeView/EditableText.vue'
 @Component({
   components: {
     TaskCard,
+    EditableText,
   },
   filters: {
   dateLocalize(date: Date) {
