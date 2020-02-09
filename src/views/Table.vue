@@ -39,7 +39,28 @@
           <td>{{task.start | dateLocalize}}</td>
           <td>{{task.end | dateLocalize }}</td>
           <td>{{ Math.abs(differenceInDays(task.end, task.start) + 1) }}</td>
-          <td>{{task.status | getStatusLabel }}</td>
+          <td>
+            <v-menu offset-y>
+              <template v-slot:activator="{on}">
+                <v-btn v-on="on" text small>
+                {{task.status | getStatusLabel }}
+                </v-btn>
+              </template>
+              <v-list>
+                <v-list-item-group v-model="task.status">
+                <v-list-item value="0" dense>
+                  TODO
+                </v-list-item>
+                <v-list-item value="1" dense>
+                  WIP
+                </v-list-item>
+                <v-list-item value="2" dense>
+                  DONE
+                </v-list-item>
+                </v-list-item-group>
+              </v-list>
+            </v-menu>
+          </td>
         </tr>
       </tbody>
       </template>
