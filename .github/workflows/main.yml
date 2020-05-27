@@ -28,7 +28,7 @@ jobs:
 
     - run: npm test
     
-    - run: sed -i -e "5i ,'publicPath':'/ganttfairy'" vue.config.js
+    - run: sed -i -e "2i ,'publicPath':'/ganttfairy'" vue.config.js
       shell: bash
 
     - run: npm run build
