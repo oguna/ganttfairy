@@ -12,10 +12,10 @@
         </thead>
         <tbody>
           <tr v-for="user in users" :key="user.id">
-            <td>{{user.id}}</td>
-            <td>{{user.firstname}}</td>
-            <td>{{user.lastname}}</td>
-            <td>{{user.mail}}</td>
+            <td>{{ user.id }}</td>
+            <td>{{ user.firstname }}</td>
+            <td>{{ user.lastname }}</td>
+            <td>{{ user.mail }}</td>
           </tr>
         </tbody>
       </template>
@@ -24,11 +24,13 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue } from "vue-property-decorator";
-@Component
-export default class Users extends Vue {
-  public get users() {
-    return this.$store.state.users.items;
-  }
-}
+import { User } from "../types";
+import { defineComponent } from "@vue/composition-api";
+export default defineComponent({
+  computed: {
+    users(): User[] {
+      return this.$store.state.users.items;
+    },
+  },
+});
 </script>

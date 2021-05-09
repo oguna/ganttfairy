@@ -11,25 +11,25 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue, Prop } from "vue-property-decorator";
 import { Task } from "@/types";
 import { format } from 'date-fns'
 import BoardTask from '@/components/kanban/BoardTask.vue';
-@Component({
-  filters: {
-  dateLocalize(date: Date) {
-    return format(date, "yyyy-MM-dd")
-  }
+import { defineComponent } from "@vue/composition-api";
+export default defineComponent({
+  computed: {
+    tasks(): Task[] {
+      return this.$store.state.tasks
+    }
+  },
+  methods: {
+    dateLocalize(date: Date) {
+      return format(date, "yyyy-MM-dd")
+    }
   },
   components: {
-      BoardTask
+    'board-task': BoardTask
   }
 })
-export default class Kanban extends Vue {
-  public get tasks() {
-    return this.$store.state.tasks;
-  }
-}
 </script>
 
 <style scoped>

@@ -4,7 +4,7 @@
     @dragend="dragend($event)"
     :class="{dragging:(dragging===task.id)}">
             <h3 class="tasktitle">#{{task.id}}: {{task.title}}</h3>
-            {{task.start|dateLocalize}} ～ {{task.end|dateLocalize}}
+            {{dateLocalize(task.start)}} ～ {{dateLocalize(task.end)}}
         </div>
 </template>
 
@@ -12,26 +12,30 @@
 import { Component, Vue, Prop } from "vue-property-decorator";
 import { Task } from "@/types";
 import { format } from 'date-fns'
-@Component({
-  filters: {
-  dateLocalize(date: Date) {
-    return format(date, "yyyy-MM-dd")
-  }
-  }
-})
-export default class TaskList extends Vue {
-    @Prop()
-    public task!: Task;
-    @Prop()
-    public dragging?: number|null;
-    public dragstart(task: Task, event: DragEvent) {
+import { defineComponent, PropType } from "@vue/composition-api";
+
+export default defineComponent({
+  props: {
+    task: Object as PropType<Task>,
+  },
+  data() {
+    return {
+      dragging: null as number | null,
+    };
+  },
+  methods: {
+      dateLocalize(date: Date): string {
+        return format(date, "yyyy-MM-dd")
+      },
+    dragstart(task: Task, event: DragEvent) {
         event.dataTransfer!.setData('text/plain', "");
         this.$emit('update:dragging', task.id);
-    }
-    public dragend(event: DragEvent) {
+    },
+    dragend(event: DragEvent) {
         this.$emit('update:dragging', null);
-    }
-}
+    },
+  },
+});
 </script>
 
 <style scoped>

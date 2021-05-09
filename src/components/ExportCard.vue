@@ -18,33 +18,43 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue, Prop } from "vue-property-decorator";
-import { Task } from "@/types";
-@Component
-export default class ExportCard extends Vue {
-    public get items() {
-        return [{text:'Comma',value:','}, {text:'Tab',value: '\t'}];
-    }
-    public separator = ',';
-  public close() {
-    this.$emit("close");
-  }
-  public submit() {
-    this.$store
-      .dispatch("exportCSV", {
-        separator: this.separator
-      })
-      .then(v => {
-        let bom = new Uint8Array([0xef, 0xbb, 0xbf]);
-        const blob = new Blob([bom, v], { type: "text/csv" });
-        const link = document.createElement("a");
-        link.href = window.URL.createObjectURL(blob);
-        link.download = this.$store.state.title + ".csv";
-        link.click();
-      })
-      .then(v => {
-        this.$emit("close");
-      });
-  }
-}
+import { defineComponent } from "@vue/composition-api";
+
+export default defineComponent({
+  data() {
+    return {
+      separator: ",",
+    };
+  },
+  computed: {
+    items(): any {
+      return [
+        { text: "Comma", value: "," },
+        { text: "Tab", value: "\t" },
+      ];
+    },
+  },
+  methods: {
+    close() {
+      this.$emit("close");
+    },
+    submit() {
+      this.$store
+        .dispatch("exportCSV", {
+          separator: this.separator,
+        })
+        .then((v) => {
+          let bom = new Uint8Array([0xef, 0xbb, 0xbf]);
+          const blob = new Blob([bom, v], { type: "text/csv" });
+          const link = document.createElement("a");
+          link.href = window.URL.createObjectURL(blob);
+          link.download = this.$store.state.title + ".csv";
+          link.click();
+        })
+        .then((v) => {
+          this.$emit("close");
+        });
+    },
+  },
+});
 </script>

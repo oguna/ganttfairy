@@ -14,26 +14,33 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue, Prop } from "vue-property-decorator";
 import { Task } from "@/types";
-@Component
-export default class ImportCard extends Vue {
-  public csv = "";
-  public message = "";
-  public separator = ",";
-  public close() {
-    this.$emit("close");
-  }
-  public submit() {
-    this.$store.dispatch('importCSV', this.csv)
-    .then((v) => {
-      this.csv = "";
-      this.message = "";
+import { defineComponent } from "@vue/composition-api";
+
+export default defineComponent({
+  data() {
+    return {
+      csv: "",
+      message: "",
+      separator: ",",
+    };
+  },
+  methods: {
+    close() {
       this.$emit("close");
-    })
-    .catch(error => {
-      this.message = error;
-    }) ;
-  }
-}
+    },
+    submit() {
+      this.$store
+        .dispatch("importCSV", this.csv)
+        .then((v) => {
+          this.csv = "";
+          this.message = "";
+          this.$emit("close");
+        })
+        .catch((error) => {
+          this.message = error;
+        });
+    },
+  },
+});
 </script>

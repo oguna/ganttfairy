@@ -11,28 +11,35 @@
 import { Component, Vue, Prop } from "vue-property-decorator";
 import { Task } from "@/types";
 import TaskList from '@/components/kanban/TaskList.vue'
-@Component({
-    components: {
-        TaskList
-    }
-})
-export default class BoardTask extends Vue {
-    @Prop()
-    public tasks!: Task[];
-    public dragging: number|null = null;
-    public get naTasks() {
-        return this.tasks.filter((task: Task) => task.status === null);
-    }
-    public get todoTasks() {
-        return this.tasks.filter((task: Task) => task.status === 0);
-    }
-    public get wipTasks() {
-        return this.tasks.filter((task: Task) => task.status === 1);
-    }
-    public get doneTasks() {
-        return this.tasks.filter((task: Task) => task.status === 2);
-    }
-}
+import { defineComponent, PropType } from "@vue/composition-api";
+
+export default defineComponent({
+  props: {
+    tasks: Array as PropType<Array<Task>>,
+  },
+  data() {
+    return {
+      dragging: null as number | null,
+    };
+  },
+  computed: {
+    naTasks(): Task[] {
+      return this.tasks!.filter((task: Task) => task.status === null);
+    },
+    todoTasks(): Task[] {
+      return this.tasks!.filter((task: Task) => task.status === 0);
+    },
+    wipTasks(): Task[] {
+      return this.tasks!.filter((task: Task) => task.status === 1);
+    },
+    doneTasks(): Task[] {
+      return this.tasks!.filter((task: Task) => task.status === 2);
+    },
+  },
+  components: {
+    "task-list": TaskList,
+  },
+});
 </script>
 
 <style scoped>
