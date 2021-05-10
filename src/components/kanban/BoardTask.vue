@@ -8,7 +8,6 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue, Prop } from "vue-property-decorator";
 import { Task } from "@/types";
 import TaskList from '@/components/kanban/TaskList.vue'
 import { defineComponent, PropType } from "@vue/composition-api";

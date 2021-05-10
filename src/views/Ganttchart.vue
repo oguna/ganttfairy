@@ -155,13 +155,14 @@
         :task="edittingTask"
         v-on:close="closeTaskDialog"
         v-on:submit="saveTaskDialog"
+        @setParent="edittingTask.parent = $event"
+        @setTitle="edittingTask.title = $event"
       ></task-card>
     </v-dialog>
   </div>
 </template>
 
 <script lang="ts">
-import { Component, Vue, Prop } from "vue-property-decorator";
 import { Task } from "@/types";
 import {
   format,
@@ -179,153 +180,163 @@ import TaskCard from "@/components/TaskCard.vue";
 import ExportCard from "@/components/ExportCard.vue";
 import ImportCard from "@/components/ImportCard.vue";
 import GanttChart from "@/components/GanttChart.vue";
-import DraggableList from "@/components/DraggableList.vue";
 import DraggableTreeView from "@/components/DraggableTreeView/index.vue";
-@Component({
+import { defineComponent, PropType } from "@vue/composition-api";
+import { TaskTreeNode } from "../types";
+
+export default defineComponent({
   components: {
     TaskCard,
     ExportCard,
     ImportCard,
     GanttChart,
-    DraggableList,
-    DraggableTreeView
-  }
-})
-export default class Ganttchart extends Vue {
-  @Prop()
-  public taskId?: string;
-  public get startDateISOString():string {
-    return format(this.startDate, 'yyyy-MM-dd');
-  }
-  public set startDateISOString(value: string) {
-    this.startDate = parse(value, 'yyyy-MM-dd', new Date());
-  }
-  public get endDateISOString():string {
-    return format(this.endDate, 'yyyy-MM-dd');
-  }
-  public set endDateISOString(value: string) {
-    this.endDate = parse(value, 'yyyy-MM-dd', new Date());
-  }
-  public get taskTree() {
-    return this.$store.state.taskTreeNodes;
-  }
-  public startDateMenu = false;
-  public endDateMenu = false;
-  public startDate = new Date(2019, 10, 1);
-  public endDate = new Date(2020,1,10);
-  public format = format;
-  public isToday = isToday;
-  public taskDialog = false;
-  public edittingTask: Task | null = null;
-  public exportDialog = false;
-  public importDialog = false;
-  public selectedTaskId = 0;
-  public  = true;
-  public get items(): Task[] {
-    return this.$store.state.tasks;
-  }
-  public get flatTreeTasks(): Task[] {
-    return this.$store.getters.getFlatTreeTasks;
-  }
-  public get dates(): Date[] {
-    const dates = [];
-    let date = new Date(this.startDate);
-    const end = new Date(this.endDate);
-    while (date <= end) {
-      dates.push(date);
-      date = addDays(date, 1);
-    }
-    return dates;
-  }
-  public get sameMonthLength(): { start: number; length: number }[] {
-    // [1,1,1,1,2,2,3,3,3] => [4,2,3]
-    const dates = this.dates;
-    let month = this.dates[0];
-    let result = [{ start: 0, length: 1 }];
-    for (let i = 1; i < dates.length; i++) {
-      if (isSameMonth(month, dates[i])) {
-        result[result.length - 1].length++;
-      } else {
-        month = dates[i];
-        result.push({ start: i, length: 1 });
-      }
-    }
-    return result;
-  }
-  public getWeekOfDays(date: Date) {
-    return format(date, "EEEEEE", { locale: ja });
-  }
-  public isHoriday(date: Date) {
-    return isSunday(date) || isSaturday(date);
-  }
-  public isActiveTask(start: Date, end: Date, day: Date) {
-    return start <= day && day <= end;
-  }
-  public openTaskDialog(task: Task|null) {
-    if (task === null) {
-      this.edittingTask = {
-        id: 0,
-        parent: null,
-        title: "",
-        start: new Date(),
-        end: new Date(),
-        status: null,
-      };
-    } else {
-      this.edittingTask = Object.assign({}, task);
-    }
-    this.taskDialog = true;
-  }
-  public closeTaskDialog() {
-    this.taskDialog = false;
-  }
-  public saveTaskDialog() {
-    if (this.edittingTask!.id === 0) {
-      this.$store.commit("addTask", this.edittingTask);
-    } else {
-      this.$store.dispatch('updateTaskWithTree', this.edittingTask);
-      //this.$store.commit("updateTask", this.edittingTask);
-    }
-    this.closeTaskDialog();
-  }
-  public deleteTask(index: number) {
-    this.$store.commit("deleteTask", index);
-  }
-  public adjustTimespan() {
-    const firstDate = this.items
-      .map(v => v.start)
-      .reduce((a, b) => (a < b ? a : b));
-    const lastDate = this.items
-      .map(v => v.end)
-      .reduce((a, b) => (a > b ? a : b));
-    this.startDate = subDays(firstDate, 1);
-    this.endDate = addDays(lastDate, 1);
-  }
-
-  public get dateWidth(): number {
-    return Math.round(this.$store.state.magnify * 24 / 100);
-  }
-  public get tasks(): Task[] {
-    return this.$store.state.tasks;
-  }
-  public gripOffset: number = 200;
-  public get styles() {
+    DraggableTreeView,
+  },
+  props: {
+    taskId: String,
+  },
+  data() {
     return {
-      "--gripOffset": `${this.gripOffset}px`,
-      "--numOfTasks": this.tasks.length,
-      "--dateWidth": this.dateWidth+'px',
-      "--ganttWidth": (this.dateWidth * this.dates.length)+'px',
-      "--screenWidth": (this.dateWidth * this.dates.length + this.gripOffset!)+'px',
+      startDateMenu: false,
+      endDateMenu: false,
+      startDate: new Date(2019, 10, 1),
+      endDate: new Date(2020, 1, 10),
+      format: format,
+      isToday: isToday,
+      taskDialog: false,
+      edittingTask: null as Task | null,
+      exportDialog: false,
+      importDialog: false,
+      selectedTaskId: 0,
+      gripOffset: 200,
     };
-  }
-  public dragstart(e: DragEvent) {
+  },
+  computed: {
+    startDateISOString: {
+      get(): string {
+        return format(this.startDate, "yyyy-MM-dd");
+      },
+      set(value: string) {
+        this.startDate = parse(value, "yyyy-MM-dd", new Date());
+      },
+    },
+    endDateISOString: {
+      get(): string {
+        return format(this.endDate, "yyyy-MM-dd");
+      },
+      set(value: string) {
+        this.endDate = parse(value, "yyyy-MM-dd", new Date());
+      },
+    },
+    taskTree(): TaskTreeNode[] {
+      return this.$store.state.taskTreeNodes;
+    },
+    items(): Task[] {
+      return this.$store.state.tasks;
+    },
+    flatTreeTasks(): Task[] {
+      return this.$store.getters.getFlatTreeTasks;
+    },
+    dates(): Date[] {
+      const dates = [];
+      let date = new Date(this.startDate);
+      const end = new Date(this.endDate);
+      while (date <= end) {
+        dates.push(date);
+        date = addDays(date, 1);
+      }
+      return dates;
+    },
+    sameMonthLength(): { start: number; length: number }[] {
+      // [1,1,1,1,2,2,3,3,3] => [4,2,3]
+      const dates = this.dates;
+      let month = this.dates[0];
+      let result = [{ start: 0, length: 1 }];
+      for (let i = 1; i < dates.length; i++) {
+        if (isSameMonth(month, dates[i])) {
+          result[result.length - 1].length++;
+        } else {
+          month = dates[i];
+          result.push({ start: i, length: 1 });
+        }
+      }
+      return result;
+    },
+    dateWidth(): number {
+      return Math.round((this.$store.state.magnify * 24) / 100);
+    },
+    tasks(): Task[] {
+      return this.$store.state.tasks;
+    },
+    styles(): any {
+      return {
+        "--gripOffset": `${this.gripOffset}px`,
+        "--numOfTasks": this.tasks.length,
+        "--dateWidth": this.dateWidth + "px",
+        "--ganttWidth": this.dateWidth * this.dates.length + "px",
+        "--screenWidth":
+          this.dateWidth * this.dates.length + this.gripOffset! + "px",
+      };
+    },
+  },
+  methods: {
+    getWeekOfDays(date: Date) {
+      return format(date, "EEEEEE", { locale: ja });
+    },
+    isHoriday(date: Date) {
+      return isSunday(date) || isSaturday(date);
+    },
+    isActiveTask(start: Date, end: Date, day: Date) {
+      return start <= day && day <= end;
+    },
+    openTaskDialog(task: Task | null) {
+      if (task === null) {
+        this.edittingTask = {
+          id: 0,
+          parent: null,
+          title: "",
+          start: new Date(),
+          end: new Date(),
+          status: null,
+        };
+      } else {
+        this.edittingTask = Object.assign({}, task);
+      }
+      this.taskDialog = true;
+    },
+    closeTaskDialog() {
+      this.taskDialog = false;
+    },
+    saveTaskDialog() {
+      if (this.edittingTask!.id === 0) {
+        this.$store.commit("addTask", this.edittingTask);
+      } else {
+        this.$store.dispatch("updateTaskWithTree", this.edittingTask);
+        //this.$store.commit("updateTask", this.edittingTask);
+      }
+      this.closeTaskDialog();
+    },
+    deleteTask(index: number) {
+      this.$store.commit("deleteTask", index);
+    },
+    adjustTimespan() {
+      const firstDate = this.items
+        .map((v) => v.start)
+        .reduce((a, b) => (a < b ? a : b));
+      const lastDate = this.items
+        .map((v) => v.end)
+        .reduce((a, b) => (a > b ? a : b));
+      this.startDate = subDays(firstDate, 1);
+      this.endDate = addDays(lastDate, 1);
+    },
+    dragstart(e: DragEvent) {
       e.dataTransfer!.dropEffect = "none";
-  }
-  public dragend(e: DragEvent) {
+    },
+    dragend(e: DragEvent) {
       this.gripOffset = e.clientX;
-  }
- 
-}
+    },
+  },
+});
 </script>
 
 <style scoped>

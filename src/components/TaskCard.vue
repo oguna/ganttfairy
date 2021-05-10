@@ -2,7 +2,7 @@
   <v-card>
     <v-card-title>#{{task.id||"new"}}</v-card-title>
     <v-card-text>
-      <v-text-field v-model="task.title" label="Title"></v-text-field>
+      <v-text-field :value="task.title" @input="$emit('setTitle', $event)" label="Title"></v-text-field>
       <v-menu
         :ref="startMenu"
         v-model="startMenu"
@@ -44,7 +44,8 @@
       <v-divider></v-divider>
       <v-label>Parent &amp; Children</v-label>
       <v-select
-        v-model="task.parent"
+        :value="task.parent"
+        @input="$emit('setParent', $event)"
         clearable
         :items="tasksOtherThanThisAndSiblingTasks"
         item-text="text"
@@ -111,31 +112,90 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue, Prop } from "vue-property-decorator";
 import { Task, Dependency } from "@/types";
 import {format, parse} from 'date-fns';
-@Component
-export default class TaskCard extends Vue {
-  public get dependencyTypes() {
-    return [
-      {text: 'FS: FinishToStart', value: 0},
-      {text: 'SS: StartToStart', value: 1},
-      {text: 'FF: FinishToFinish', value: 2},
-      {text: 'SF: StartToFinish', value: 3},
-    ]
-  }
-  public get tasks() {
-    return this.$store.state.tasks;
-  }
-  public get tasksForNewDependency() {
-    return this.$store.state.tasks
-    .filter((v: Task) => v.id !== this.task!.id)
-    .map((v:Task) => {return {
-      'text': `#${v.id}: ${v.title}`,
-      'value': v.id
-    }})
-  }
-  public addNewDependency() {
+import { defineComponent, PropType } from "@vue/composition-api";
+export default defineComponent({
+  props: {
+    task: Object as PropType<Task>,
+  },
+  data() {
+    return {
+      dependencyType: 0 as number,
+      dependencyTask: null as number|null,
+      startMenu: false,
+      endMenu: false,
+    }
+  },
+  emits: ['setTitle', 'setParent'],
+  computed: {
+    dependencyTypes() {
+      return [
+        {text: 'FS: FinishToStart', value: 0},
+        {text: 'SS: StartToStart', value: 1},
+        {text: 'FF: FinishToFinish', value: 2},
+        {text: 'SF: StartToFinish', value: 3},
+      ]
+    },
+    tasks(): Task[] {
+      return this.$store.state.tasks;
+    },
+    tasksForNewDependency(): any[] {
+      return this.$store.state.tasks
+      .filter((v: Task) => v.id !== this.task!.id)
+      .map((v:Task) => {return {
+        'text': `#${v.id}: ${v.title}`,
+        'value': v.id
+      }})
+    },
+    dependenciesToThis(): any[] {
+      const types = ['FS', 'SS', 'FF', 'SF'];
+      return this.$store.state.dependencies
+      .filter((v:Dependency)=>v.to===this.task!.id)
+      .map((v:Dependency) => {return {
+        'text': `${types[v.type]} - # ${v.id}: ${this.$store.getters.getTaskById(v.id).title}`,
+        'id': v.id,
+      }});
+    },
+    startDateISOString: {
+      get(): string {
+        return format(this.task!.start, 'yyyy-MM-dd');
+      },
+      set(value: string) {
+      this.task!.start = parse(value, 'yyyy-MM-dd', new Date());
+      }
+    },
+    endDateISOString: {
+      get():string {
+        return format(this.task!.end, 'yyyy-MM-dd');
+      },
+      set(value: string) {
+        this.task!.end = parse(value, 'yyyy-MM-dd', new Date());
+      },
+    },
+    tasksOtherThanThisAndSiblingTasks(): any[] {
+      const siblings = this.$store.getters.getSiblingTasksById(this.task!.id);
+      const siblingIds = siblings.map((task:Task) => task.id);
+      return this.$store.state.tasks
+      .filter((v:Task)=>v.id!==this.task!.id && !siblingIds.includes(v.id))
+      .map((v:Task)=>{return{'text':`#${v.id} ${v.title}`, 'value': v.id}});
+    },
+    children(): any[] {
+      return this.$store.getters.getChildrenTasksById(this.task!.id);
+    },
+    childPluralization() {
+      const num = this.children.length;
+      if (num === 0) {
+        return "No children"
+      } else if (num === 1) {
+        return "1 child"
+      } else {
+        return num + " children";
+      }
+    }
+  },
+  methods: {
+  addNewDependency() {
     if (this.dependencyTask === undefined || this.dependencyTask === null) {
       return;
     }
@@ -146,69 +206,23 @@ export default class TaskCard extends Vue {
     });
     this.dependencyTask = null;
     this.dependencyType = 0;
-  }
-  public dependencyType: number = 0;;
-  public dependencyTask: number|null = null;;
-  public get dependenciesToThis() {
-    const types = ['FS', 'SS', 'FF', 'SF'];
-    return this.$store.state.dependencies
-    .filter((v:Dependency)=>v.to===this.task!.id)
-    .map((v:Dependency) => {return {
-      'text': `${types[v.type]} - # ${v.id}: ${this.$store.getters.getTaskById(v.id).title}`,
-      'id': v.id,
-    }});
-  }
-  public get startDateISOString():string {
-    return format(this.task!.start, 'yyyy-MM-dd');
-  }
-  public set startDateISOString(value: string) {
-    this.task!.start = parse(value, 'yyyy-MM-dd', new Date());
-  }
-  public get endDateISOString():string {
-    return format(this.task!.end, 'yyyy-MM-dd');
-  }
-  public set endDateISOString(value: string) {
-    this.task!.end = parse(value, 'yyyy-MM-dd', new Date());
-  }
-  public get tasksOtherThanThisAndSiblingTasks() {
-    const siblings = this.$store.getters.getSiblingTasksById(this.task!.id);
-    const siblingIds = siblings.map((task:Task) => task.id);
-    return this.$store.state.tasks
-    .filter((v:Task)=>v.id!==this.task!.id && !siblingIds.includes(v.id))
-    .map((v:Task)=>{return{'text':`#${v.id} ${v.title}`, 'value': v.id}});
-  }
-  public get children() {
-    return this.$store.getters.getChildrenTasksById(this.task!.id);
-  }
-  public deleteChild(task: Task) {
+  },
+  deleteChild(task: Task) {
     task.parent = null;
-  }
-  @Prop()
-  public task?: Task;
-  public startMenu = false;
-  public endMenu = false;
-  public close() {
+  },
+  close() {
     this.$emit("close");
-  }
-  public submit() {
+  },
+  submit() {
     this.$emit("submit");
-  }
-  public delete() {
+  },
+  delete() {
     this.$store.commit('deleteTask', this.task!.id);
     this.$emit('close');
-  }
-  public get childPluralization() {
-    const num = this.children.length;
-    if (num === 0) {
-      return "No children"
-    } else if (num === 1) {
-      return "1 child"
-    } else {
-      return num + " children";
-    }
-  }
-  public deleteDependency(id: number) {
+  },
+  deleteDependency(id: number) {
     this.$store.commit('deleteDependency', id)
+  },
   }
-}
+})
 </script>

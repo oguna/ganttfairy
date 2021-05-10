@@ -132,9 +132,8 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue, Prop, Emit } from "vue-property-decorator";
 import { Task, DependencyType } from "@/types";
-import { addDays, subDays, parse, differenceInCalendarDays } from "date-fns";
+import { addDays, differenceInCalendarDays } from "date-fns";
 interface Rect {
   x: number;
   y: number;
@@ -151,255 +150,262 @@ interface Line {
   x2: number;
   y2: number;
 }
-@Component
-export default class GanttChart extends Vue {
-  @Prop({ default: "" })
-  public title!: string;
-  @Prop()
-  public tasks!: Task[];
-  @Prop()
-  public start!: Date;
-  @Prop()
-  public end!: Date;
-  @Prop()
-  public dates!: Date[];
-  @Prop({ default: 24 })
-  public dateWidth!: number;
-  @Prop({ default: 24 })
-  public lineHeight!: number;
-  @Prop()
-  public value!: number;
-  @Emit()
-  public input(value: number) {}
-  public get activeRect(): Rect|null {
-    const index = this.tasks.findIndex(v => v.id === this.value);
-    if (index === -1) {
-      return null;
-    }
-    return {
-      x: 0,
-      y: this.lineHeight * index,
-      w: this.width,
-      h: 24,
-    };
-  }
 
-  public get height() {
-    return this.tasks.length * this.lineHeight;
-  }
-  public get width() {
-    return this.dates.length * this.dateWidth;
-  }
-  public get boxes(): Rect[] {
-    const result: Rect[] = [];
-    for (let i = 0; i < this.tasks.length; i++) {
-      let task = this.tasks[i];
-      let x = differenceInCalendarDays(task.start, this.start) * this.dateWidth;
-      let y = this.lineHeight * i + 4;
-      let w =
-        (differenceInCalendarDays(task.end, task.start) + 1) * this.dateWidth;
-      if (w < 0) {
-        w = -w;
-      }
-      if (x < 0) {
-        x = 0;
-        w = w + x;
-      }
-      if (this.selectedRect === i && this.selectedType === "task") {
-        x += this.selectedDelta! * this.dateWidth;
-      }
-      if (this.selectedRect === i && this.selectedType === "start") {
-        x += this.selectedDelta! * this.dateWidth!;
-        w -= this.selectedDelta! * this.dateWidth;
-      }
-      if (this.selectedRect === i && this.selectedType === "end") {
-        w += this.selectedDelta! * this.dateWidth;
-      }
-      result.push({ x, y, w, h: 16 });
+import { defineComponent, PropType } from "@vue/composition-api";
+export default defineComponent({
+  props: {
+    title: String,
+    tasks: Array as PropType<Task[]>,
+    start: Date,
+    end: Date,
+    dates: Array as PropType<Date[]>,
+    dateWidth: {
+      type: Number,
+      default: 24,
+    },
+    lineHeight: {
+      type: Number,
+      default: 24
+    },
+    value: Number,
+  },
+  emits: ['input'],
+  data() {
+    return {
+      selectedRect: null as number | null,
+      selectedPos:  null as Pos | null,
+      selectedDelta: null as number | null,
+      selectedType: null as "task" | "start" | "end" | null,
     }
-    return result;
-  }
-  public get siblingRects(): Rect[] {
-    const result = new Array<Rect>();
-    for (let i = 0; i < this.tasks.length; i++) {
-      const task = this.tasks[i];
-      const spans: {s:Date,e:Date}[] = this.$store.getters.getDeduplicatedSpansOfSiblingTask(task.id);
-      for (let span of spans) {
-        const x = differenceInCalendarDays(span.s, this.start) * this.dateWidth;
-        const y = this.lineHeight * i + 4;
-        const w = (Math.abs(differenceInCalendarDays(span.s, span.e)) + 1) * this.dateWidth;
-        const h = 16;
-        result.push({
-          x, y, w, h
-        });
+  },
+  computed: {
+    activeRect(): Rect|null {
+      const index = this.tasks!.findIndex(v => v.id === this.value);
+      if (index === -1) {
+        return null;
       }
-    }
-    return result;
-  }
-  public get weekendRects(): Rect[] {
-    const result: Rect[] = [];
-    for (let i = 0; i < this.dates.length; i++) {
-      if (this.dates[i].getDay() === 6 || this.dates[i].getDay() === 0) {
-        result.push({
-          x: i * this.dateWidth,
-          y: 0,
-          w: this.dateWidth,
-          h: this.lineHeight * this.tasks.length
-        });
+      return {
+        x: 0,
+        y: this.lineHeight * index,
+        w: this.width,
+        h: 24,
+      };
+    },
+    height(): number {
+      return this.tasks!.length * this.lineHeight;
+    },
+    width(): number {
+      return this.dates!.length * this.dateWidth;
+    },
+    boxes(): Rect[] {
+      const result: Rect[] = [];
+      for (let i = 0; i < this.tasks!.length; i++) {
+        let task = this.tasks![i];
+        let x = differenceInCalendarDays(task.start, this.start!) * this.dateWidth;
+        let y = this.lineHeight * i + 4;
+        let w =
+          (differenceInCalendarDays(task.end, task.start) + 1) * this.dateWidth;
+        if (w < 0) {
+          w = -w;
+        }
+        if (x < 0) {
+          x = 0;
+          w = w + x;
+        }
+        if (this.selectedRect === i && this.selectedType === "task") {
+          x += this.selectedDelta! * this.dateWidth;
+        }
+        if (this.selectedRect === i && this.selectedType === "start") {
+          x += this.selectedDelta! * this.dateWidth!;
+          w -= this.selectedDelta! * this.dateWidth;
+        }
+        if (this.selectedRect === i && this.selectedType === "end") {
+          w += this.selectedDelta! * this.dateWidth;
+        }
+        result.push({ x, y, w, h: 16 });
       }
-    }
-    return result;
-  }
-  public get accumulatedPeriods(): Line[] {
-    const periods = new Array<Line>();
-    for (let i = 0; i < this.tasks.length; i++) {
-      const task = this.tasks[i];
-      const fastDateLastDate = this.$store.getters.getFastDateLastDateOfTasks(
-       task.id
-      );
-      if (fastDateLastDate !== null) {
-        const fastDate = fastDateLastDate.fast;
-        const lastDate = fastDateLastDate.last;
-        const x1 =
-          differenceInCalendarDays(fastDate, this.start) * this.dateWidth;
-        const x2 =
-          (differenceInCalendarDays(lastDate, this.start) + 1) * this.dateWidth;
-        let y = this.lineHeight * i + 2;
-        periods.push({
-          x1,
-          x2,
-          y1: y,
-          y2: y
-        });
+      return result;
+    },
+    siblingRects(): Rect[] {
+      const result = new Array<Rect>();
+      for (let i = 0; i < this.tasks!.length; i++) {
+        const task = this.tasks![i];
+        const spans: {s:Date,e:Date}[] = this.$store.getters.getDeduplicatedSpansOfSiblingTask(task.id);
+        for (let span of spans) {
+          const x = differenceInCalendarDays(span.s, this.start!) * this.dateWidth;
+          const y = this.lineHeight * i + 4;
+          const w = (Math.abs(differenceInCalendarDays(span.s, span.e)) + 1) * this.dateWidth;
+          const h = 16;
+          result.push({
+            x, y, w, h
+          });
+        }
       }
-    }
-    return periods;
-  }
-  public get dependencyGraphs(): Line[] {
-    const periods = new Array<Line>();
-      for (let dependency of this.$store.state.dependencies) {
-          const fromTask = this.$store.getters.getTaskById(dependency.from);
-          const toTask = this.$store.getters.getTaskById(dependency.to);
-          const fromTaskIndex = this.tasks.findIndex(v => v.id === dependency.from);
-          const toTaskIndex = this.tasks.findIndex(v => v.id === dependency.to);
-          if (fromTaskIndex === -1 || toTaskIndex === -1) {
-            continue;
-          }
-          let x1 = 0;
-          if (dependency.type === DependencyType.StartToStart || dependency.type === DependencyType.StartToFinish) {
-            x1 = differenceInCalendarDays(fromTask.start, this.start) * this.dateWidth;
-          } else {
-            x1 = (differenceInCalendarDays(fromTask.end, this.start) + 1) * this.dateWidth;
-          }
-          let x2 = 0;
-          if (dependency.type === DependencyType.FinishToStart || dependency.type === DependencyType.StartToStart) {
-            x2 = differenceInCalendarDays(toTask.start, this.start) * this.dateWidth;
-          } else {
-            x2 = (differenceInCalendarDays(toTask.end, this.start) + 1) * this.dateWidth;
-          }
-          const y1 = fromTaskIndex * this.lineHeight + this.lineHeight / 2;
-          const y2 = toTaskIndex * this.lineHeight + this.lineHeight / 2;
-        periods.push({
-          x1,
-          y1,
-          x2,
-          y2,
-        });
+      return result;
+    },
+    weekendRects(): Rect[] {
+      const result: Rect[] = [];
+      for (let i = 0; i < this.dates!.length; i++) {
+        if (this.dates![i].getDay() === 6 || this.dates![i].getDay() === 0) {
+          result.push({
+            x: i * this.dateWidth,
+            y: 0,
+            w: this.dateWidth,
+            h: this.lineHeight * this.tasks!.length
+          });
+        }
+      }
+      return result;
+    },
+    accumulatedPeriods(): Line[] {
+      const periods = new Array<Line>();
+      for (let i = 0; i < this.tasks!.length; i++) {
+        const task = this.tasks![i];
+        const fastDateLastDate = this.$store.getters.getFastDateLastDateOfTasks(
+        task.id
+        );
+        if (fastDateLastDate !== null) {
+          const fastDate = fastDateLastDate.fast;
+          const lastDate = fastDateLastDate.last;
+          const x1 =
+            differenceInCalendarDays(fastDate, this.start!) * this.dateWidth;
+          const x2 =
+            (differenceInCalendarDays(lastDate, this.start!) + 1) * this.dateWidth;
+          let y = this.lineHeight * i + 2;
+          periods.push({
+            x1,
+            x2,
+            y1: y,
+            y2: y
+          });
+        }
       }
       return periods;
-  }
-  public selectedRect: number | null = null;
-  public selectedPos: Pos | null = null;
-  public selectedDelta: number | null = null;
-  public selectedType: "task" | "start" | "end" | null = null;
-  public get taskLabels(): Pos[] {
-    const result: Pos[] = [];
-    for (let i = 0; i < this.tasks.length; i++) {
-      const task = this.tasks[i];
-      let x = differenceInCalendarDays(task.start, this.start) * this.dateWidth;
-      let y = this.lineHeight * i + this.lineHeight / 2;
-      let w =
-        (differenceInCalendarDays(task.end, task.start) + 1) * this.dateWidth;
-      if (w < 0) {
-        w = -w;
+    },
+    dependencyGraphs(): Line[] {
+      const periods = new Array<Line>();
+        for (let dependency of this.$store.state.dependencies) {
+            const fromTask = this.$store.getters.getTaskById(dependency.from);
+            const toTask = this.$store.getters.getTaskById(dependency.to);
+            const fromTaskIndex = this.tasks!.findIndex(v => v.id === dependency.from);
+            const toTaskIndex = this.tasks!.findIndex(v => v.id === dependency.to);
+            if (fromTaskIndex === -1 || toTaskIndex === -1) {
+              continue;
+            }
+            let x1 = 0;
+            if (dependency.type === DependencyType.StartToStart || dependency.type === DependencyType.StartToFinish) {
+              x1 = differenceInCalendarDays(fromTask.start, this.start!) * this.dateWidth;
+            } else {
+              x1 = (differenceInCalendarDays(fromTask.end, this.start!) + 1) * this.dateWidth;
+            }
+            let x2 = 0;
+            if (dependency.type === DependencyType.FinishToStart || dependency.type === DependencyType.StartToStart) {
+              x2 = differenceInCalendarDays(toTask.start, this.start!) * this.dateWidth;
+            } else {
+              x2 = (differenceInCalendarDays(toTask.end, this.start!) + 1) * this.dateWidth;
+            }
+            const y1 = fromTaskIndex * this.lineHeight + this.lineHeight / 2;
+            const y2 = toTaskIndex * this.lineHeight + this.lineHeight / 2;
+          periods.push({
+            x1,
+            y1,
+            x2,
+            y2,
+          });
+        }
+        return periods;
+    },
+    taskLabels(): Pos[] {
+      const result: Pos[] = [];
+      for (let i = 0; i < this.tasks!.length; i++) {
+        const task = this.tasks![i];
+        let x = differenceInCalendarDays(task.start, this.start!) * this.dateWidth;
+        let y = this.lineHeight * i + this.lineHeight / 2;
+        let w =
+          (differenceInCalendarDays(task.end, task.start) + 1) * this.dateWidth;
+        if (w < 0) {
+          w = -w;
+        }
+        x = w + x;
+        if (x < 0) {
+          x = 0;
+        }
+        if (this.selectedRect === i && this.selectedType === "task") {
+          x += this.selectedDelta! * this.dateWidth;
+        }
+        if (this.selectedRect === i && this.selectedType === "end") {
+          x += this.selectedDelta! * this.dateWidth;
+        }
+        result.push({ x, y });
       }
-      x = w + x;
-      if (x < 0) {
-        x = 0;
-      }
-      if (this.selectedRect === i && this.selectedType === "task") {
-        x += this.selectedDelta! * this.dateWidth;
-      }
-      if (this.selectedRect === i && this.selectedType === "end") {
-        x += this.selectedDelta! * this.dateWidth;
-      }
-      result.push({ x, y });
+      return result;
     }
-    return result;
-  }
-  public taskMousedown(index: number, event: MouseEvent) {
-    if (event.button === 0) {
-      this.input(this.tasks[index].id);
-      this.selectedRect = index;
-      this.selectedPos = { x: event.clientX, y: event.clientY };
-      event.preventDefault();
-      this.selectedType = "task";
-    }
-  }
-  public taskStartMousedown(index: number, event: MouseEvent) {
-    if (event.button === 0) {
-      this.selectedRect = index;
-      this.selectedPos = { x: event.clientX, y: event.clientY };
-      event.preventDefault();
-      this.selectedType = "start";
-    }
-  }
-  public taskEndMousedown(index: number, event: MouseEvent) {
-    if (event.button === 0) {
-      this.selectedRect = index;
-      this.selectedPos = { x: event.clientX, y: event.clientY };
-      event.preventDefault();
-      this.selectedType = "end";
-    }
-  }
-  public taskMousemove(event: MouseEvent) {
-    if (this.selectedRect === null) {
-      return;
-    }
-    const deltaX = event.clientX - this.selectedPos!.x;
-    this.selectedDelta = Math.round(deltaX / this.dateWidth);
-  }
-  public taskMouseup(event: MouseEvent) {
-    if (this.selectedDelta !== null) {
-      if (this.selectedType === "start") {
-        this.tasks[this.selectedRect!].start = addDays(
-          this.tasks[this.selectedRect!].start,
-          this.selectedDelta!
-        );
+  },
+  methods: {
+    taskMousedown(index: number, event: MouseEvent) {
+      if (event.button === 0) {
+        this.$emit('input', this.tasks![index].id);
+        this.selectedRect = index;
+        this.selectedPos = { x: event.clientX, y: event.clientY };
+        event.preventDefault();
+        this.selectedType = "task";
       }
-      if (this.selectedType === "end") {
-        this.tasks[this.selectedRect!].end = addDays(
-          this.tasks[this.selectedRect!].end,
-          this.selectedDelta!
-        );
+    },
+    taskStartMousedown(index: number, event: MouseEvent) {
+      if (event.button === 0) {
+        this.selectedRect = index;
+        this.selectedPos = { x: event.clientX, y: event.clientY };
+        event.preventDefault();
+        this.selectedType = "start";
       }
-      if (this.selectedType === "task") {
-        this.tasks[this.selectedRect!].start = addDays(
-          this.tasks[this.selectedRect!].start,
-          this.selectedDelta!
-        );
-        this.tasks[this.selectedRect!].end = addDays(
-          this.tasks[this.selectedRect!].end,
-          this.selectedDelta!
-        );
+    },
+    taskEndMousedown(index: number, event: MouseEvent) {
+      if (event.button === 0) {
+        this.selectedRect = index;
+        this.selectedPos = { x: event.clientX, y: event.clientY };
+        event.preventDefault();
+        this.selectedType = "end";
       }
+    },
+    taskMousemove(event: MouseEvent) {
+      if (this.selectedRect === null) {
+        return;
+      }
+      const deltaX = event.clientX - this.selectedPos!.x;
+      this.selectedDelta = Math.round(deltaX / this.dateWidth);
+    },
+    taskMouseup(event: MouseEvent) {
+      if (this.selectedDelta !== null) {
+        if (this.selectedType === "start") {
+          this.tasks![this.selectedRect!].start = addDays(
+            this.tasks![this.selectedRect!].start,
+            this.selectedDelta!
+          );
+        }
+        if (this.selectedType === "end") {
+          this.tasks![this.selectedRect!].end = addDays(
+            this.tasks![this.selectedRect!].end,
+            this.selectedDelta!
+          );
+        }
+        if (this.selectedType === "task") {
+          this.tasks![this.selectedRect!].start = addDays(
+            this.tasks![this.selectedRect!].start,
+            this.selectedDelta!
+          );
+          this.tasks![this.selectedRect!].end = addDays(
+            this.tasks![this.selectedRect!].end,
+            this.selectedDelta!
+          );
+        }
+      }
+      this.selectedRect = null;
+      this.selectedPos = null;
+      this.selectedDelta = null;
+      this.selectedType = null;
     }
-    this.selectedRect = null;
-    this.selectedPos = null;
-    this.selectedDelta = null;
-    this.selectedType = null;
   }
-}
+})
 </script>
 
 <style scoped>

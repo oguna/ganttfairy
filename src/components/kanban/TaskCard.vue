@@ -9,7 +9,6 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue, Prop } from "vue-property-decorator";
 import { Task } from "@/types";
 import { format } from 'date-fns'
 import { defineComponent, PropType } from "@vue/composition-api";

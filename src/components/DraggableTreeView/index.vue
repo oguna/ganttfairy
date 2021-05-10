@@ -8,6 +8,7 @@
       v-on:open-dialog="openDialog"
       :node="node"
       :indent="0"
+      @openClose="node.open=!node.open"
     ></draggable-tree-view-node>
   </div>
 </template>
