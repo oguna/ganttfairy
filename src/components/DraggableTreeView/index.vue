@@ -35,7 +35,7 @@ export default defineComponent({
   },
   methods: {
     openDialog(task: Task) {
-      this.$emit('open-dialog', task)
+      this.$emit('openDialog', task)
     },
     input(value: number) {
       this.$emit('input', value)
