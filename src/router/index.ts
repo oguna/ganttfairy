@@ -1,57 +1,23 @@
-import Vue from 'vue'
-import VueRouter from 'vue-router'
-import Home from '../views/Home.vue'
-import Ganttchart from '../views/Ganttchart.vue'
-import Table from '../views/Table.vue'
-import Kanban from '../views/Kanban.vue'
-import Calendar from '../views/Calendar.vue'
-import About from '../views/About.vue'
-import Users from '../views/Users.vue'
+import { createRouter, createWebHistory } from 'vue-router'
+import HomeView from '../views/HomeView.vue'
 
-Vue.use(VueRouter)
-
-const routes = [
-  {
-    path: '/',
-    name: 'home',
-    component: Home
-  },
-  {
-    path: '/table',
-    name: 'table',
-    component: Table
-  },
-  {
-    path: '/kanban',
-    name: 'kanban',
-    component: Kanban
-  },
-  {
-    path: '/ganttchart',
-    name: 'ganttchart',
-    component: Ganttchart
-  },
-  {
-    path: '/calendar',
-    name: 'calendar',
-    component: Calendar
-  },
-  {
-    path: '/users',
-    name: 'users',
-    component: Users
-  },
-  {
-    path: '/about',
-    name: 'about',
-    component: About
-  }
-]
-
-const router = new VueRouter({
-  mode: 'hash',
-  base: process.env.BASE_URL,
-  routes
+const router = createRouter({
+  history: createWebHistory(import.meta.env.BASE_URL),
+  routes: [
+    {
+      path: '/',
+      name: 'home',
+      component: HomeView
+    },
+    {
+      path: '/about',
+      name: 'about',
+      // route level code-splitting
+      // this generates a separate chunk (About.[hash].js) for this route
+      // which is lazy-loaded when the route is visited.
+      component: () => import('../views/AboutView.vue')
+    }
+  ]
 })
 
 export default router

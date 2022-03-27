@@ -1,37 +1,21 @@
 # ganttfairy
 
-Web App for easy-creating gantt chat.
+![screenshot](screenshot.png)
 
-![](screenshot.png)
+## Project Setup
 
-## Project setup
-```
+```sh
 npm install
 ```
 
-### Compiles and hot-reloads for development
-```
-npm run serve
+### Compile and Hot-Reload for Development
+
+```sh
+npm run dev
 ```
 
-### Compiles and minifies for production
-```
+### Type-Check, Compile and Minify for Production
+
+```sh
 npm run build
 ```
-
-### Run your unit tests
-```
-npm run test:unit
-```
-
-### Lints and fixes files
-```
-npm run lint
-```
-
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
-
-## LICENSE
-All source codes I wrote are under public domain (Unlicense).
-However, some third party libraries are NOT under public domain, so please pay attention when you employ those source codes into your products.

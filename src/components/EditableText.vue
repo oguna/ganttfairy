@@ -11,11 +11,11 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, PropType } from "@vue/composition-api";
+import { defineComponent } from "vue";
 
 export default defineComponent({
   props: {
-    v: String,
+    modelValue: String,
     editable: Boolean,
   },
   data() {
@@ -24,13 +24,13 @@ export default defineComponent({
       focusIn: false,
     };
   },
-  emits: ['update:v'],
+  emits: ['update:modelValue'],
   mounted(): void {
-    this.text = this.v!;
+    this.text = this.modelValue!;
   },
   methods: {
     input(str: string): void {
-      this.$emit("update:v", str);
+      this.$emit("update:modelValue", str);
     },
     update(e: Event): void {
       const target: HTMLElement = e.target as HTMLElement;
@@ -60,7 +60,7 @@ export default defineComponent({
       if (this.focusIn) {
         return;
       }
-      this.text = this.v!;
+      this.text = this.modelValue!;
     },
   },
 });

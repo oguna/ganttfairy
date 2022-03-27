@@ -1,133 +1,36 @@
-<template>
-  <v-app>
-    <side-bar v-model="drawer"> </side-bar>
-    <v-app-bar app color="primary" dark dense elevation="0">
-      <v-app-bar-nav-icon @click.stop="drawer = !drawer" />
-      <v-toolbar-title>
-        {{ title }}
-        <v-menu
-          ref="menu"
-          v-model="menu"
-          :close-on-content-click="false"
-          transition="scale-transition"
-          offset-y
-          min-width="290px"
-        >
-          <template v-slot:activator="{ on }">
-            <v-btn text icon small v-on="on">
-              <v-icon>mdi-chevron-down</v-icon>
-            </v-btn>
-          </template>
-          <v-card>
-            <v-card-text>
-              <v-text-field v-model="title"></v-text-field>
-            </v-card-text>
-          </v-card>
-        </v-menu>
-      </v-toolbar-title>
-      <v-spacer></v-spacer>
-      <v-btn-toggle group tile borderless dense>
-        <v-btn text to="/">
-          <v-icon>mdi-home</v-icon>
-          Overview</v-btn
-        >
-        <v-btn text to="/table">
-          <v-icon>mdi-table</v-icon>
-          Table</v-btn
-        >
-        <v-btn text to="/kanban">
-          <v-icon>mdi-bulletin-board</v-icon>
-          Kanban</v-btn
-        >
-        <v-btn text to="/ganttchart">
-          <v-icon>mdi-chart-timeline</v-icon>
-          Ganttchart</v-btn
-        >
-        <v-btn text to="/calendar">
-          <v-icon>mdi-calendar</v-icon>
-          Calendar</v-btn
-        >
-      </v-btn-toggle>
-      <v-spacer></v-spacer>
-      <v-btn text icon>
-        <v-icon>mdi-account</v-icon>
-      </v-btn>
-    </v-app-bar>
+<script setup lang="ts">
+import { RouterLink, RouterView } from 'vue-router'
+</script>
 
-    <v-main>
-      <router-view></router-view>
-    </v-main>
-    <v-footer app color="primary" dark dense class="py-0">
-      <div class="px-2 body-2">{{ numOfTasks }} Tasks</div>
-      <v-menu offset-y top>
-        <template v-slot:activator="{ on }">
-          <v-btn small text tile class="px-2" dark v-on="on">
-            <v-icon small>mdi-magnify</v-icon>
-            {{ magnify }}%
-          </v-btn>
-        </template>
-        <v-list dense>
-          <v-list-item-group>
-            <v-list-item @click="setMagnify(100)">
-              <v-list-item-title>100%</v-list-item-title>
-            </v-list-item>
-            <v-list-item @click="setMagnify(50)">
-              <v-list-item-title>50%</v-list-item-title>
-            </v-list-item>
-          </v-list-item-group>
-        </v-list>
-      </v-menu>
-      <v-spacer></v-spacer>
-      <v-btn
-        small
-        text
-        tile
-        class="px-2 text-none"
-        dark
-        href="https://oguna.github.io/ganttfairy/"
-        target="_blank"
-      >
-        <v-icon class="mr-1" small>mdi-github-circle</v-icon>
-        Gantt Fairy by oguna
-      </v-btn>
-    </v-footer>
-  </v-app>
+<template>
+  <header>
+    <nav class="nav">
+      <h1>Gantt Fairy</h1>&nbsp;
+      <RouterLink to="/">Home</RouterLink>&nbsp;
+      <RouterLink to="/about">About</RouterLink>&nbsp;
+      <a href="https://github.com/oguna/ganttfairy" target="_blank">GitHub</a>
+    </nav>
+  </header>
+  <RouterView />
 </template>
 
-<script lang="ts">
-import SideBar from "@/components/SideBar.vue";
-import { defineComponent } from "@vue/composition-api";
+<style scoped>
+.nav {
+  background-color: #2B77CC;
+  padding: 0.5em;
+}
+.nav ::v-deep(h1) {
+  font-size: 1em;
+  color: white;
+  display: inline;
+}
 
-export default defineComponent({
-  data() {
-    return {
-      drawer: false,
-      menu: false,
-    };
-  },
-  computed: {
-    title: {
-      get(): string {
-        return this.$store.state.title;
-      },
-      set(value: string) {
-        this.$store.commit("setTitle", value);
-      },
-    },
-    numOfTasks(): number {
-      return this.$store.state.tasks.length;
-    },
-    magnify(): number {
-      return this.$store.state.magnify;
-    },
-  },
-  methods: {
-    setMagnify(value: number) {
-      this.$store.commit("setMagnify", value);
-    },
-  },
-  components: {
-    SideBar,
-  },
-});
-</script>
+.nav ::v-deep(a) {
+  font-size: 1em;
+  color: white;
+}
+
+.nav ::v-deep(a:hover) {
+  background-color: darkblue;
+}
+</style>
